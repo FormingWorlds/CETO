@@ -19,6 +19,12 @@ from multiprocessing.pool import Pool
 from multiprocessing import get_start_method
 from multiprocessing import get_context
 from numba import njit
+import argparse #added for command line arguments
+
+## Argument Parser 
+parser=argparse.ArgumentParser()
+parser.add_argument("inputfile",nargs="?",default="initial_atm_vMCMC_2024.txt",type=str)
+args=parser.parse_args()
 
 print(" ")
 print(" ")
@@ -38,7 +44,7 @@ print(" ")
 #print("    NON-IDEAL H2O IN SILICATE (REGULAR SOLN)")
 print("--------------------------------------------------")
 print("Read above! ")
-time.sleep(5.0)
+time.sleep(1.0)
 
 # Supress warnings
 #warnings.simplefilter('ignore', RuntimeWarning)
@@ -75,8 +81,8 @@ numvar=30  # ORIGINALLY 2
 var=np.zeros(numvar)
 
 # VALUES CONTAIN ALL MODEL INPUT PARAMETERS IN ORDER
-print('Opening initial_atm_vMCMC_2024.txt...')
-name="initial_atm_vMCMC_2024.txt"
+name = args.inputfile
+print(f'Opening {name}...')
 count = len(open(name).readlines())
 print('  Input file length = ', count)
 values=np.genfromtxt(name,'float')  # Read from file into values
