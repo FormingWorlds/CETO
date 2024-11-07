@@ -1,12 +1,9 @@
-# Initial conditions for CETO exoplanet model
-# Items are in dictionary format, follows default initial atmosphere model
-# 'initial_atm_vMCMC_2024.txt'
-dict = {
+{
     "MgO_melt" : 0.032,
     "SiO2_melt" : 0.001,
     "MgSiO3_melt" : 0.9211,
     "FeO_melt" : 0.0005,
-    "FeSiO3_melt" : 0.15,
+    "FeSiO3_melt" : 0.0005,
     "Na2O_melt" : 0.007,
     "Na2SiO3_melt" : 0.001,
     "H2_melt" : 1.0e-9,
@@ -28,16 +25,17 @@ dict = {
     "SiO_gas" : 1.0e-9,
     "Na_gas" : 1.0e-9,
     "SiH4_gas" : 1.0e-13,
-    "moles_gas" : 2300.0,
+    "moles_atm" : 2300.0,
     "moles_melt" : 2000.0,
     "moles_metal" : 1800.0,
-    "M" : 4.0,
-    "T_surface" : 3000.0,
-    "P" : 300.0,
-    "T_core_mantle_eq" : 3500.0,
+    "planet_mass" : 4.78,
+    "T_surface" : 3500.0,
+    "p" : 300.0,
+    "wt_massbalance" : 1.5,
+    "wt_summing" : 0.5,
     "wt_atm" : 1.0,
     "wt_solub" : 1.0,
-    "wt_intramelt" : 5.0,
+    "wt_melt" : 5.0,
     "wt_evap" : 5.0,
     "wt1" : 1.0,
     "wt2" : 1.0,
@@ -70,5 +68,6 @@ dict = {
     "wt29" : 1.0,
     "seed" : 0,
     "niters" : 2000,
-    "MCMCoffset" : 1.0e-6
+    "MCMCoffset" : 1.0e-7,
+    "T_core_mantle_eq" : 3500.0
 }
