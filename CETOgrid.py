@@ -13,7 +13,7 @@ parser.add_argument("--outputdir",nargs='?',default="results",type=str)
 args=parser.parse_args()
 
 try:
-    myfile = Path(f"./{args.outputdir}")
+    myfile = Path(f"{args.outputdir}")
     my_abs_path = myfile.resolve(strict=True)
 except FileNotFoundError:
     print("specified outputdirectory does not exist, creating dir")
@@ -27,7 +27,12 @@ for i in range(len(args.values)):
     subprocess.run([f'python3 Exoplanet_atmosphere_model_vMCMC_SiH4_2024_xB_maybe_faster.py \
                      --key {args.variablekey} --value {x}'], shell=True)
     
+    resultdirectory = Path(f"{args.outputdir}/result_{args.variablekey}_{x}")
+    os.mkdir(resultdirectory)
 
     source_result = f"{str(Path.cwd())}/output_summary_atm_SiH4_xB_SAVE.txt"
-    destination_result = f"{args.outputdir}/result_{args.variablekey}_{x}.txt"
-    subprocess.run([f'cp {source_result} {destination_result}'], shell=True)
+    source_G_files = f"{str(Path.cwd())}/G*_RT.txt"
+    destination_result = f"{resultdirectory}/result_{args.variablekey}_{x}.txt"
+    destination_G_files = f"{resultdirectory}"
+    subprocess.run([f'mv {source_result} {destination_result}'], shell=True)
+    subprocess.run([f'mv {source_G_files} {destination_G_files}'], shell=True)

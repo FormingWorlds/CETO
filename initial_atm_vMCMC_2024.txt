@@ -1,34 +1,34 @@
-0.032 # MgO melt
-0.001 # SiO2 melt
-0.9211 #MgSiO3 melt
-0.0005 #FeO melt, make small
-0.0005 #FeSiO3 melt, 0.15 gives -1.55 for DIW at 0.9 xFe metal or 0.09 for -2
-0.007 #Na2O melt
-0.001 #Na2SiO3 melt
-1.0e-9 #H2 melt
-1.0e-9 #H2O melt
-1.0e-9 #CO melt
-1.0e-9 #CO2 melt
-0.99 #Fe metal
-1.0e-9 #Si metal
-1.0e-9 #O metal
-1.0e-9 #H metal
-0.999  #H2 gas
-0.001  #CO gas
-1.0e-9  #CO2 gas
-1.0e-9  #CH4 gas
-1.0e-9  #O2 gas
-1.0e-9  #H2O gas
-1.0e-9 #Fe gas
-1.0e-9 #Mg gas
-1.0e-9 #SiO gas
-1.0e-9 #Na gas
-1.0e-13 #SiH4 gas
-2300.0  #Moles atm, 250 is nominal  
-2000.0  #Moles silicate, 
-1800.0 #Moles metal 
-4.78 #Planet mass in Earth masses 0.5
-3500.0 #surface T in K for 3000K at core-mantle boundary
+0.032 # MgO melt 
+0.001 # SiO2 melt 
+0.9211 #MgSiO3 melt 
+0.0005 #FeO melt, make small 
+0.0005 #FeSiO3 melt, 0.15 gives -1.55 for DIW at 0.9 xFe metal or 0.09 for -2 
+0.007 #Na2O melt 
+0.001 #Na2SiO3 melt 
+1.0e-9 #H2 melt 
+1.0e-9 #H2O melt 
+1.0e-9 #CO melt 
+1.0e-9 #CO2 melt 
+0.99 #Fe metal 
+1.0e-9 #Si metal 
+1.0e-9 #O metal 
+1.0e-9 #H metal 
+0.999  #H2 gas 
+0.001  #CO gas 
+1.0e-9  #CO2 gas 
+1.0e-9  #CH4 gas 
+1.0e-9  #O2 gas 
+1.0e-9  #H2O gas 
+1.0e-9 #Fe gas 
+1.0e-9 #Mg gas 
+1.0e-9 #SiO gas 
+1.0e-9 #Na gas 
+1.0e-13 #SiH4 gas 
+5800.0  #Moles atm, 250 is nominal   
+2000.0  #Moles silicate,  
+1230.0 #Moles metal  
+4.0 #Planet mass in Earth masses 0.5
+3000.0 #surface T in K for 3000K at core-mantle boundary
 300.0  #pressure penalty (weight)
 1.5  # Weight factor for mass balance: wt_massbalance
 0.5 # Weight factor for mole fraction sum constraints: wt_summing
@@ -67,5 +67,5 @@
 1.0 #weight for f29: atmosphere mole fraction sum
 0 #integer seed, if 0 then seed is chosen randomly  36
 2000 #of iterations at each temperature 20000
-1.0e-06  #Offset in random positions of MCMC walkers, e.g. 1e-7 for xB or 1e-9 for xH2O
-3500.0 # Core-mantle equilibration temperature
+1.0e-07  #Offset in random positions of MCMC walkers, e.g. 1e-7 for xB or 1e-9 for xH2O
+6000.0 # Core-mantle equilibration temperature

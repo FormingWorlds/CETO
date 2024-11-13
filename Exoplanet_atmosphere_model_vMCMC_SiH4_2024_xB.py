@@ -2428,7 +2428,9 @@ xH2_xH2O_silicate=result[7]/result[8]
 print('')
 print('xH2/xH2O silicate =',xH2_xH2O_silicate)
 DIW_apparent=2.0*log((result[3]+result[4])/0.85)
-DIW_actual=2.0*log((result[3]+result[4]/result[11]))
+# DIW_actual=2.0*log((result[3]+result[4]/result[11])) #Incorrect Expression
+DIW_actual = 2.0*log((result[3]+result[4])/result[11]) #new expression given by Edward Young
+
 print('DIW_silicate_for_xFe_metal=0.85 =',DIW_apparent)
 print('DIW_actual = ',DIW_actual)
 
