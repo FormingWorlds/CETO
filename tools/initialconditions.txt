@@ -1,0 +1,39 @@
+# Initial conditions for CETO exoplanet model
+# Other initial conditions are placed as defaults in the model
+# Items are in dictionary format, follows default initial atmosphere model
+# 'initial_atm_vMCMC_2024.txt'
+dict = {
+    "MgO_melt" : 0.032,
+    "SiO2_melt" : 0.001,
+    "MgSiO3_melt" : 0.9211,
+    "FeO_melt" : 0.0005,
+    "FeSiO3_melt" : 0.15,
+    "Na2O_melt" : 0.007,
+    "Na2SiO3_melt" : 0.001,
+    "H2_melt" : 1.0e-9,
+    "H2O_melt" : 1.0e-9,
+    "CO_melt" : 1.0e-9,
+    "CO2_melt" : 1.0e-9,
+    "Fe_metal" : 0.99,
+    "Si_metal" : 1.0e-9,
+    "O_metal" : 1.0e-9,
+    "H_metal" : 1.0e-9,
+    "H2_gas" : 0.999,
+    "CO_gas" : 0.001,
+    "CO2_gas" : 1.0e-9,
+    "CH4_gas" : 1.0e-9,
+    "O2_gas" : 1.0e-9,
+    "H2O_gas" : 1.0e-9,
+    "Fe_gas" : 1.0e-9,
+    "Mg_gas" : 1.0e-9,
+    "SiO_gas" : 1.0e-9,
+    "Na_gas" : 1.0e-9,
+    "SiH4_gas" : 1.0e-13,
+    "moles_gas" : 2300.0,
+    "moles_melt" : 2000.0,
+    "moles_metal" : 1800.0,
+    "M" : 4.0,
+    "T_surface" : 3000.0,
+    "P" : 300.0,
+    "T_core_mantle_eq" : 3500.0
+}

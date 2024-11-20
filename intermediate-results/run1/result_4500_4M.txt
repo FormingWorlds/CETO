@@ -1,0 +1,156 @@
+1.54677e-01 # Red chi-square of fit
+4.00000e+00 # Planet mass in Earth masses
+4.50000e+03 # Temperature K
+3.32298e+04 # Pressure in bar
+1.08677e-02 # Mass fraction atmosphere
+6.23335e-01 # Mass fraction silicate mantle
+3.65797e-01 # Mass fraction metal
+2.92879e-01 # xMgO melt
+1.16256e-01 # xSiO2 melt
+4.02038e-01 # xMgSiO3 melt
+5.25562e-02 # xFeO melt
+1.11112e-02 # xFeSiO3 melt
+1.10508e-04 # xNa2O melt
+5.61461e-03 # xNa2SiO3 melt
+3.59426e-02 # xH2 melt
+8.34895e-02 # xH2O melt
+1.30881e-06 # xCO melt
+9.87342e-09 # xCO2 melt
+3.92035e-01 # xFe metal
+8.86620e-02 # xSi metal
+8.17444e-02 # xO metal
+4.37562e-01 # xH metal
+9.61365e-01 # xH2 gas
+2.55215e-04 # xCO gas
+6.52482e-07 # xCO2 gas
+1.89929e-03 # xCH4 gas
+4.58895e-10 # xO2 gas
+1.98758e-02 # xH2O gas
+1.42479e-04 # xFe gas
+6.82968e-04 # xMg gas
+4.66626e-03 # xSiO gas
+5.65600e-04 # xNa gas
+1.05508e-02 # xSiH4 gas
+1.06560e+03 # Moles atm
+2.74205e+03 # Moles silicate
+4.10461e+03 # Moles metal
+-2.18412e+00 # DIW condensed planet rel to IW
+4.77147e+01 # wt percent SiO2 melt
+4.20165e+01 # wt percent MgO melt
+6.86186e+00 # wt percent FeO melt
+5.32308e-01 # wt percent Na2O melt
+1.08701e-01 # wt percent H2 melt
+2.25635e+00 # wt percent H2O melt
+5.49952e-05 # wt percent CO melt
+6.51851e-07 # wt percent CO2 melt
+8.37791e+01 # wt percent Fe metal
+9.52864e+00 # wt percent Si metal
+5.00464e+00 # wt percent O metal
+1.68766e+00 # wt percent H metal
+3.54290e+00 # Uncompressed density of metal g/cc
+7.19678e+00 # Uncompressed density of pure Fe g/cc
+2.83111e+01 # Experimental metal percent density deficit
+2.99062e+00 # grams per mole atmosphere
+6.48063e+01 # wt percent H2 atm
+1.19730e+01 # wt percent H2O atm
+9.37426e+00 # wt percent SiO atm
+5.55052e-01 # wt percent Mg atm
+2.66066e-01 # wt percent Fe atm
+4.34793e-01 # wt percent Na atm
+2.39033e-01 # wt percent CO atm
+9.60181e-04 # wt percent CO2 atm
+1.01867e+00 # wt percent CH4 atm
+4.91004e-07 # wt percent O2 atm
+-2.72819e+00  # DIW atmosphere rel to IW
+2.28818e-03  # Model KEQ for rxn 1 : Na2SiO3 = Na2O + SiO2 
+2.37131e-02  # Model KEQ for rxn 2 : 1/2SiO2 + Fe = FeO + 1/2Si 
+8.46911e-02  # Model KEQ for rxn 3 : MgSiO3 = MgO + SiO2 
+1.45184e+02  # Model KEQ for rxn 4 : O + 1/2Si = 1/2SiO2 
+1.87729e-01  # Model KEQ for rxn 5 : 2Hmetal=H2,sil 
+5.49895e-01  # Model KEQ for rxn 6 : FeSiO3 = FeO + SiO2 
+5.47411e+04  # Model KEQ for rxn 7 : 2H2O,sil + Si=SiO2 + 2H2,sil 
+6.54699e-01  # Model KEQ for rxn 8 : CO,g + 1/2O2 = CO2,g 
+3.51177e+10  # Model KEQ for rxn 9 : CH4,g + 1/2O2 = 2H2,g + CO,g 
+5.29438e+00  # Model KEQ for rxn 10 : H2,g + 1/2O2 = H2O,g 
+3.51783e-01  # Model KEQ for rxn 11 : FeO = Fe,g + 1/2O2 
+3.02594e-01  # Model KEQ for rxn 12 : MgO = Mg,g + 1/2O2 
+5.20835e+00  # Model KEQ for rxn 13 : SiO2 = SiO,g + 1/2O2 
+1.24824e+04  # Model KEQ for rxn 14 : Na2O = 2Na,g + 1/2O2 
+1.12511e-06  # Model KEQ for rxn 15 : H2,g = H2,sil 
+1.31496e-06  # Model KEQ for rxn 16 : H2O,g = H2O,sil 
+1.54327e-07  # Model KEQ for rxn 17 : CO,g = CO,sil 
+4.55378e-07  # Model KEQ for rxn 18 : CO2,g = CO2,sil 
+8.65181e-12  # Model KEQ for rxn 19 : SiO + 2H2 = SiH4 + 1/2O2 
+
+INPUT FILE:
+0.032 # MgO melt 
+0.001 # SiO2 melt 
+0.9211 #MgSiO3 melt 
+0.0005 #FeO melt, make small 
+0.0005 #FeSiO3 melt, 0.15 gives -1.55 for DIW at 0.9 xFe metal or 0.09 for -2 
+0.007 #Na2O melt 
+0.001 #Na2SiO3 melt 
+1.0e-9 #H2 melt 
+1.0e-9 #H2O melt 
+1.0e-9 #CO melt 
+1.0e-9 #CO2 melt 
+0.99 #Fe metal 
+1.0e-9 #Si metal 
+1.0e-9 #O metal 
+1.0e-9 #H metal 
+0.999  #H2 gas 
+0.001  #CO gas 
+1.0e-9  #CO2 gas 
+1.0e-9  #CH4 gas 
+1.0e-9  #O2 gas 
+1.0e-9  #H2O gas 
+1.0e-9 #Fe gas 
+1.0e-9 #Mg gas 
+1.0e-9 #SiO gas 
+1.0e-9 #Na gas 
+1.0e-13 #SiH4 gas 
+2300.0  #Moles atm, 250 is nominal   
+2000.0  #Moles silicate,  
+1800.0 #Moles metal  
+4.0 #Planet mass in Earth masses 0.5 
+4500.0 #surface T in K for 3000K at core-mantle boundary 
+300.0  #pressure penalty (weight) 
+1.5  # Weight factor for mass balance: wt_massbalance 
+0.5 # Weight factor for mole fraction sum constraints: wt_summing 
+1.0 #weight for atmosphere reactions: watm_m 
+1.0 #weight for solubility reactions: wsolub_m 
+5.0 #weight for intra-melt reactions: wmelt_m 
+5.0 # weight for evaporation reactions: wevap_m 
+1.0 #weight for f1: Na2SiO3 = Na2O + SiO2 
+1.0 #weight for f2: 1/2SiO2 + Fe = FeO + 1/2Si 
+1.0 #weight for f3: MgSiO3 = MgO + SiO2 
+1.0 #weight for f4: O + 1/2Si = 1/2SiO2 
+1.0 #weight for f5: 2Hmetal=H2,sil 
+1.0 #weight for f6: FeSiO3 = FeO + SiO2 
+2.0 #weight for f7: 2H2O,sil + Si=SiO2 + 2H2,sil 
+1.0 #weight for f8: CO,g + 1/2O2 = CO2,g 
+1.0 #weight for f9: CH4,g + 1/2O2 = 2H2,g + CO,g 
+5.0 #weight for f10: H2,g + 1/2O2 = H2O,g 
+1.0 #weight for f11: FeO = Fe,g + 1/2O2 
+1.0 #weight for f12: MgO = Mg,g + 1/2O2 
+1.0 #weight for f13: SiO2 = SiO,g + 1/2O2 
+1.0 #weight for f14: Na2O = 2Na,g + 1/2O2 
+0.5 #weight for f15: H2,g = H2,sil 
+1.0 #weight for f16: H2O,g = H2O,sil 
+2.0 #weight for f17: CO,g = CO,sil 
+1.0 #weight for f18: CO2,g = CO2,sil 
+1.0 #weight for f19: SiO + 3H2 = SiH4 + H2O 
+1.0 #weight for f20: Sum Si 
+1.0 #weight for f21: Sum Mg 
+5.0 #weight for f22: Sum O 
+1.0 #weight for f23: Sum Fe 
+5.0 #weight for f24: Sum H 
+1.0 #weight for f25: Sum Na 
+1.0 #weight for f26: Sum C 
+1.0 #weight for f27: melt mole fraction sum  
+1.0 #weight for f28: metal mole fraction sum 
+1.0 #weight for f29: atmosphere mole fraction sum 
+0 #integer seed, if 0 then seed is chosen randomly  36 
+2000 #of iterations at each temperature 20000 
+1.0e-06  #Offset in random positions of MCMC walkers, e.g. 1e-7 for xB or 1e-9 for xH2O 
+3500.0 # Core-mantle equilibration temperature 
