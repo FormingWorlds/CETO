@@ -9,7 +9,12 @@ import subprocess
 parser=argparse.ArgumentParser("Argument parser for running exoplanet model over grid of values")
 parser.add_argument("-variablekey",type=str)
 parser.add_argument("-values", nargs='+', required=True)
-parser.add_argument("--outputdir",nargs='?',default="results",type=str)
+parser.add_argument("--modelversion",nargs='?',
+                    default="Exoplanet_atmosphere_model_vMCMC_SiH4_2024_xB_maybe_faster.py",
+                    type=str)
+parser.add_argument("--outputdir",nargs='?',
+                    default="./results",
+                    type=str)
 args=parser.parse_args()
 
 try:
@@ -24,13 +29,14 @@ else:
 for i in range(len(args.values)):
     x = args.values[i]
     print(f"CETOgrid.py: Script in loop {i+1}, running model for {args.variablekey} = {x}")
-    subprocess.run([f'python3 Exoplanet_atmosphere_model_vMCMC_SiH4_2024_xB_maybe_faster.py \
+    subprocess.run([f'python3 {args.modelversion} \
                      --key {args.variablekey} --value {x}'], shell=True)
+    
     
     resultdirectory = Path(f"{args.outputdir}/result_{args.variablekey}_{x}")
     os.mkdir(resultdirectory)
 
-    source_result = f"{str(Path.cwd())}/output_summary_atm_SiH4_xB_SAVE.txt"
+    source_result = f"{str(Path.cwd())}/output_summary_atm_SiH4_xB.txt"
     source_G_files = f"{str(Path.cwd())}/G*_RT.txt"
     destination_result = f"{resultdirectory}/result_{args.variablekey}_{x}.txt"
     destination_G_files = f"{resultdirectory}"

@@ -18,6 +18,15 @@ import warnings
 from multiprocessing.pool import Pool
 from multiprocessing import get_start_method
 from multiprocessing import get_context
+import argparse #added for command line arguments
+import json #added for flexible file handling
+
+## Argument Parser 
+parser=argparse.ArgumentParser()
+parser.add_argument("--inputfile",nargs="?",default="initial_atm_vMCMC_2024.txt",type=str)
+parser.add_argument("--key", nargs='?', default=None, type=str)
+parser.add_argument("--value",nargs='?',default=None,type=float)
+args=parser.parse_args()
 
 print(" ")
 print(" ")
@@ -39,6 +48,7 @@ print("--------------------------------------------------")
 print("Read above! ")
 time.sleep(5.0)
 
+time_start = time.time()
 # Supress warnings
 #warnings.simplefilter('ignore', RuntimeWarning)
 
@@ -74,12 +84,37 @@ numvar=30  # ORIGINALLY 2
 var=np.zeros(numvar)
 
 # VALUES CONTAIN ALL MODEL INPUT PARAMETERS IN ORDER
-print('Opening initial_atm_vMCMC_2024.txt...')
-name="initial_atm_vMCMC_2024.txt"
+name = args.inputfile
+print(f'Opening {name}...')
 count = len(open(name).readlines())
 print('  Input file length = ', count)
-values=np.genfromtxt(name,'float')  # Read from file into values
-print('')
+
+if args.inputfile == "initial_atm_vMCMC_2024.txt":
+    keylist = [
+        'MgO_melt', 'SiO2_melt', 'MgSiO3_melt', 'FeO_melt', 'FeSiO3_melt',
+        'Na2O_melt', 'Na2SiO3_melt', 'H2_melt', 'H2O_melt', 'CO_melt',
+        'CO2_melt', 'Fe_metal', 'Si_metal', 'O_metal', 'H_metal',
+        'H2_gas', 'CO_gas', 'CO2_gas', 'CH4_gas', 'O2_gas', 'H2O_gas',
+        'Fe_gas', 'Mg_gas', 'SiO_gas', 'Na_gas', 'SiH4_gas', 'moles_atm',
+        'moles_melt', 'moles_metal', 'planet_mass', 'T_surface', 'p', 'wt_massbalance',
+        'wt_summing', 'wt_atm', 'wt_solub', 'wt_melt', 'wt_evap', 'wt1', 'wt2', 'wt3',
+        'wt4', 'wt5', 'wt6', 'wt7', 'wt8', 'wt9', 'wt10', 'wt11',
+        'wt12', 'wt13', 'wt14', 'wt15', 'wt16', 'wt17', 'wt18', 'wt19',
+        'wt20', 'wt21', 'wt22', 'wt23', 'wt24', 'wt25', 'wt26', 'wt27',
+        'wt28', 'wt29', 'seed', 'niters', 'MCMCoffset', 'T_core_mantle_eq'
+                ]
+    vals = np.genfromtxt(args.inputfile)
+    inputdict = dict(zip(keylist, vals))
+else:
+    with open(args.inputfile, mode='r', encoding='utf-8') as handle:
+        inputdict = json.load(handle)
+
+if args.key != None:
+    inputdict[args.key] = args.value
+    values = list(inputdict.values())
+else:
+    values = list(inputdict.values())
+
 for i in range(0,numvar-1):
     var[i]=values[i]
 var[numvar-1]=values[31]
@@ -2906,7 +2941,8 @@ copy_inputs(name_initial)
 #figure.savefig("corner_atmosphere.png")
 #plt.close()
 
-
+time_end = time.time()
+print(f"Time elapsed for full run: {time_end-time_start}s")
 print('End.')
 
 
