@@ -75,7 +75,7 @@ var=np.zeros(numvar)
 
 # VALUES CONTAIN ALL MODEL INPUT PARAMETERS IN ORDER
 print('Opening initial_atm_vMCMC_2024.txt...')
-name="Young912.txt"
+name="initial_atm_vMCMC_2024.txt"
 count = len(open(name).readlines())
 print('  Input file length = ', count)
 values=np.genfromtxt(name,'float')  # Read from file into values

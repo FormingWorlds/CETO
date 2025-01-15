@@ -5,6 +5,9 @@ requirements.txt
 # Results directory
 results
 
+# GRT directory (used for reference)
+source/codeYoung/GRT_1300_6000
+
 # temporary progress files
 progress.png 
 progress.txt
