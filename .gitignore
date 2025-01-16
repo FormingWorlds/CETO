@@ -3,6 +3,7 @@ venv
 requirements.txt
 
 # Results directory
+results/run1
 results/
 
 # GRT directory (used for reference)
