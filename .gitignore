@@ -3,7 +3,7 @@ venv
 requirements.txt
 
 # Results directory
-results
+results/
 
 # GRT directory (used for reference)
 source/codeYoung/GRT_1300_6000
