@@ -1,5 +1,4 @@
-# Import our modules
-import pdb
+# Import our modules 
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -19,10 +18,16 @@ import warnings
 from multiprocessing.pool import Pool
 from multiprocessing import get_start_method
 from multiprocessing import get_context
-# from numba import njit
-import jax.numpy as jnp
-from jax import jit
-import pdb
+from numba import njit
+import argparse #added for command line arguments
+import json #added for flexible file handling
+
+## Argument Parser 
+parser=argparse.ArgumentParser()
+parser.add_argument("--inputfile",nargs="?",default="initial_atm_vMCMC_2024.txt",type=str)
+parser.add_argument("--key", nargs='?', default=None, type=str)
+parser.add_argument("--value",nargs='?',default=None,type=float)
+args=parser.parse_args()
 
 print(" ")
 print(" ")
@@ -42,7 +47,9 @@ print(" ")
 #print("    NON-IDEAL H2O IN SILICATE (REGULAR SOLN)")
 print("--------------------------------------------------")
 print("Read above! ")
-time.sleep(5.0)
+time.sleep(1.0)
+
+time_start = time.time()
 
 # Supress warnings
 #warnings.simplefilter('ignore', RuntimeWarning)
@@ -79,11 +86,37 @@ numvar=30  # ORIGINALLY 2
 var=np.zeros(numvar)
 
 # VALUES CONTAIN ALL MODEL INPUT PARAMETERS IN ORDER
-print('Opening initial_atm_vMCMC_2024.txt...')
-name="initial_atm_vMCMC_2024.txt"
+name = args.inputfile
+print(f'Opening {name}...')
 count = len(open(name).readlines())
 print('  Input file length = ', count)
-values=np.genfromtxt(name,'float')  # Read from file into values
+
+if args.inputfile == "initial_atm_vMCMC_2024.txt":
+    keylist = [
+        'MgO_melt', 'SiO2_melt', 'MgSiO3_melt', 'FeO_melt', 'FeSiO3_melt',
+        'Na2O_melt', 'Na2SiO3_melt', 'H2_melt', 'H2O_melt', 'CO_melt',
+        'CO2_melt', 'Fe_metal', 'Si_metal', 'O_metal', 'H_metal',
+        'H2_gas', 'CO_gas', 'CO2_gas', 'CH4_gas', 'O2_gas', 'H2O_gas',
+        'Fe_gas', 'Mg_gas', 'SiO_gas', 'Na_gas', 'SiH4_gas', 'moles_atm',
+        'moles_melt', 'moles_metal', 'planet_mass', 'T_surface', 'p', 'wt_massbalance',
+        'wt_summing', 'wt_atm', 'wt_solub', 'wt_melt', 'wt_evap', 'wt1', 'wt2', 'wt3',
+        'wt4', 'wt5', 'wt6', 'wt7', 'wt8', 'wt9', 'wt10', 'wt11',
+        'wt12', 'wt13', 'wt14', 'wt15', 'wt16', 'wt17', 'wt18', 'wt19',
+        'wt20', 'wt21', 'wt22', 'wt23', 'wt24', 'wt25', 'wt26', 'wt27',
+        'wt28', 'wt29', 'seed', 'niters', 'MCMCoffset', 'T_core_mantle_eq'
+                ]
+    vals = np.genfromtxt(args.inputfile)
+    inputdict = dict(zip(keylist, vals))
+else:
+    with open(args.inputfile, mode='r', encoding='utf-8') as handle:
+        inputdict = json.load(handle)
+
+if args.key != None:
+    inputdict[args.key] = args.value
+    values = list(inputdict.values())
+else:
+    values = list(inputdict.values())
+
 print('')
 for i in range(0,numvar-1):
     var[i]=values[i]
@@ -156,7 +189,7 @@ print('Number of iterations =',iter)
 ranoffset=float(values[69])
 print('')
 print('Offset for walkers = %10.3e' %ranoffset)
-    
+ 
 #var[0]=0.001 # MgO melt
 #var[1]=0.001 # SiO2 melt
 #var[2]=0.903 #MgSiO3 melt
@@ -1727,7 +1760,7 @@ print('Scaling for f27 through f29 =',wtx)
 #--------------------------------------------------------------------------------------------------------
 #Function to minimize in order to solve for mole fractions and phase abundances at equilibrium
 
-# @jit
+@njit
 def func(var):
     P=var[29]
     Pstd=1.0
@@ -2075,95 +2108,94 @@ print('')
 print('')
 print('MCMC Search beginning....')
 print('')
-theta=jnp.zeros(numvar)
+theta=np.zeros(numvar)
 theta=soln.x #Current estimate of best parameters from simulated annealing is assigned to model vector theta
-y_model=jnp.zeros(numvar) # These equilibrium constants and mass-balance constraints comprise our model
-yerr=jnp.zeros(numvar) # Will use this for estimates of uncertainties in equilibrium constants and mass-balance constraints
+y_model=np.zeros(numvar) # These equilibrium constants and mass-balance constraints comprise our model
+yerr=np.zeros(numvar) # Will use this for estimates of uncertainties in equilibrium constants and mass-balance constraints
 
 # Our 'data' are the actual expected values for the equilibrium constants and mass-balance constraints.
 # For historical reasons we assign this to vector y
-y=jnp.zeros(numvar)
+y=np.zeros(numvar)
 # Assign actual natural logs of equilibrium constants with pressure corrections, although note, these are actually
 # natural logs of KD values since we have coupled the total pressure corrections with the delta GRT (DG/(RT)) terms.
-# pdb.set_trace()
-y = y.at[0].set(-(GRT1_T ))
-y = y.at[1].set(-(GRT2_T ))
-y = y.at[2].set(-(GRT3_T ))
-y = y.at[3].set(-(GRT4_T ))
-y = y.at[4].set(-(GRT5_T))
-y = y.at[5].set(-(GRT6_T ))
-y = y.at[6].set(-(GRT7_T ))
-y = y.at[7].set(-(GRT8_T))
-y = y.at[8].set(-(GRT9_T))
-y = y.at[9].set(-(GRT10_T))
-y = y.at[10].set(-((GRT11_T+(DeltaV11/(Rgas*temp))*(P-Pstd)))) # now excludes P correction for evaporation if DeltaV11 ne zero
-y = y.at[11].set(((GRT12_T+(DeltaV12/(Rgas*temp))*(P-Pstd)))) # now excludes P correction for evaporation ...
-y = y.at[12].set(-((GRT13_T+(DeltaV13/(Rgas*temp))*(P-Pstd)))) # now excludes P correction for evaporation ...
-y = y.at[13].set(-((GRT14_T+(DeltaV14/(Rgas*temp))*(P-Pstd)))) # now excludes P correction for evaporation ...
+y[0]=-(GRT1_T )
+y[1]=-(GRT2_T )
+y[2]=-(GRT3_T )
+y[3]=-(GRT4_T )
+y[4]=-(GRT5_T)
+y[5]=-(GRT6_T )
+y[6]=-(GRT7_T )
+y[7]=-(GRT8_T)
+y[8]=-(GRT9_T)
+y[9]=-(GRT10_T)
+y[10]=-((GRT11_T+(DeltaV11/(Rgas*temp))*(P-Pstd))) # now excludes P correction for evaporation if DeltaV11 ne zero
+y[11]=-((GRT12_T+(DeltaV12/(Rgas*temp))*(P-Pstd))) # now excludes P correction for evaporation ...
+y[12]=-((GRT13_T+(DeltaV13/(Rgas*temp))*(P-Pstd))) # now excludes P correction for evaporation ...
+y[13]=-((GRT14_T+(DeltaV14/(Rgas*temp))*(P-Pstd))) # now excludes P correction for evaporation ...
 #y[14]=-(GRT15_T)  # Rxn 15 fixed KD with P rather than fixed Keq with pressure, thus cancelling -ln(P) term
 #y[14]=-(GRT15_T-ln(P/Pstd) )  # Rxn 15 fixed KD with P rather than fixed Keq with pressure, thus cancelling -ln(P) term
-y = y.at[14].set(-(GRT15_T-ln(1.0e4/Pstd) ))  # Rxn 15 fixed KD for value at 1GPa
-y = y.at[15].set(-(GRT16_T)) # excludes P corr
-y = y.at[16].set(-(GRT17_T)) # excludes P corr
-y = y.at[17].set(-(GRT18_T)) # excludes P corr
-y = y.at[18].set(-(GRT19_T)) # excludes P corr
+y[14]=-(GRT15_T-ln(1.0e4/Pstd) )  # Rxn 15 fixed KD for value at 1GPa
+y[15]=-(GRT16_T) # excludes P corr
+y[16]=-(GRT17_T) # excludes P corr
+y[17]=-(GRT18_T) # excludes P corr
+y[18]=-(GRT19_T) # excludes P corr
 # Assign actual moles of components
-y = y.at[19].set(nSi)
-y = y.at[20].set(nMg)
-y = y.at[21].set(nO)
-y = y.at[22].set(nFe)
-y = y.at[23].set(nH)
-y = y.at[24].set(nNa)
-y = y.at[25].set(nC)
+y[19]=nSi
+y[20]=nMg
+y[21]=nO
+y[22]=nFe
+y[23]=nH
+y[24]=nNa
+y[25]=nC
 # Assign actual mole fractions sums, which must be unity for each of the three phases.
-y = y.at[26].set(1.000)
-y = y.at[27].set(1.000)
-y = y.at[28].set(1.000)
+y[26]=1.000
+y[27]=1.000
+y[28]=1.000
 # Pressure should exactly match physics
-y = y.at[29].set(0.0)
+y[29]=0.0
 
 # Create a vector yerr that contains errors associated with each aspect of the model
 # Blanket relative uncertainties for all lnKeq values
 lnk_err=0.005 # 0.005 for aH2O = xB^2 for walkers = 1e-7, and aH2O = xH2O for walkers =1e-9
-yerr = yerr.at[0].set(abs(lnk_err*y[0]))
-yerr = yerr.at[1].set(abs(lnk_err*y[1]))
-yerr = yerr.at[2].set(abs(lnk_err*y[2]))
-yerr = yerr.at[3].set(abs(lnk_err*y[3]))
-yerr = yerr.at[4].set(abs(lnk_err*y[4]))
-yerr = yerr.at[5].set(abs(lnk_err*y[5]))
-yerr = yerr.at[6].set(abs(lnk_err*y[6]))
-yerr = yerr.at[7].set(abs(lnk_err*y[7]))
-yerr = yerr.at[8].set(abs(lnk_err*y[8]))
-yerr = yerr.at[9].set(abs(lnk_err*y[9]))
-yerr = yerr.at[10].set(abs(lnk_err*y[10]))
-yerr = yerr.at[11].set(abs(lnk_err*y[11]))
-yerr = yerr.at[12].set(abs(lnk_err*y[12]))
+yerr[0]=abs(lnk_err*y[0])
+yerr[1]=abs(lnk_err*y[1])
+yerr[2]=abs(lnk_err*y[2])
+yerr[3]=abs(lnk_err*y[3])
+yerr[4]=abs(lnk_err*y[4])
+yerr[5]=abs(lnk_err*y[5])
+yerr[6]=abs(lnk_err*y[6])
+yerr[7]=abs(lnk_err*y[7])
+yerr[8]=abs(lnk_err*y[8])
+yerr[9]=abs(lnk_err*y[9])
+yerr[10]=abs(lnk_err*y[10])
+yerr[11]=abs(lnk_err*y[11])
+yerr[12]=abs(lnk_err*y[12])
 #yerr[13]=abs(lnk_err*y[13])
-yerr = yerr.at[13].set(abs((lnk_err/5.0)*y[13]))
-yerr = yerr.at[14].set(abs(lnk_err*y[14]))
-yerr = yerr.at[15].set(abs(lnk_err*y[15]))
+yerr[13]=abs((lnk_err/5.0)*y[13])
+yerr[14]=abs(lnk_err*y[14])
+yerr[15]=abs(lnk_err*y[15])
 #yerr[16]=abs(lnk_err*y[16])
-yerr = yerr.at[16].set(abs((lnk_err/5.0)*y[16]))
-yerr = yerr.at[17].set(abs(lnk_err*y[17]))
+yerr[16]=abs((lnk_err/5.0)*y[16])
+yerr[17]=abs(lnk_err*y[17])
 #yerr[18]=abs(lnk_err*y[18])
-yerr = yerr.at[18].set(abs((lnk_err/5.0)*y[18]))
+yerr[18]=abs((lnk_err/5.0)*y[18])
 
 # Blanket relative uncertainty for mass balance
 moles_err=0.0001
-yerr = yerr.at[19].set(abs(moles_err*y[19]))
-yerr = yerr.at[20].set(abs(moles_err*y[20]))
-yerr = yerr.at[21].set(abs(moles_err*y[21]))
-yerr = yerr.at[22].set(abs(moles_err*y[22]))
-yerr = yerr.at[23].set(abs(moles_err*y[23]))
-yerr = yerr.at[24].set(abs(moles_err*y[24]))
-yerr = yerr.at[25].set(abs(moles_err*y[25]))
+yerr[19]=abs(moles_err*y[19])
+yerr[20]=abs(moles_err*y[20])
+yerr[21]=abs(moles_err*y[21])
+yerr[22]=abs(moles_err*y[22])
+yerr[23]=abs(moles_err*y[23])
+yerr[24]=abs(moles_err*y[24])
+yerr[25]=abs(moles_err*y[25])
 # Blanket relative uncertainty for mole fraction sums
 x_err=1.0e-5
-yerr = yerr.at[26].set(x_err)
-yerr = yerr.at[27].set(x_err)
-yerr = yerr.at[28].set(x_err)
+yerr[26]=x_err
+yerr[27]=x_err
+yerr[28]=x_err
 # Pressure fractional error
-yerr = yerr.at[29].set(0.1)
+yerr[29]=0.1
 
 print('y(actual model)= \n ',y)
 print('')
@@ -2171,124 +2203,110 @@ print('')
 
 #--------------------------------------------------------------------------------------------------------
 # Our model function
-
-
-
-@jit
+@njit
 def model(theta, y_model):
-    P = theta[29]
-    Pstd = 1.0
-
-    T_max = 1873.0  # Assuming T_max is defined somewhere
-    ln = jnp.log
-
-    lngSi = -6.65 * T_max / T_max - (12.41 * T_max / T_max) * ln(1.0 - theta[12])
-    lngSi = lngSi - (
-                (-5.0 * T_max / T_max) * theta[13] * (1.0 + ln(1 - theta[13]) / theta[13] - 1.0 / (1.0 - theta[12])))
-    lngSi = lngSi + (-5.0 * T_max / T_max) * theta[13] ** 2.0 * theta[12] * (
-                1.0 / (1.0 - theta[12]) + 1.0 / (1.0 - theta[13]) + theta[12] / (2.0 * (1.0 - theta[12]) ** 2.0) - 1.0)
-
-    lngO = (4.29 - 16500.0 / T_max) - (-1.0 * T_max / T_max) * ln(1.0 - theta[13])
-    lngO = lngO - ((-5.0 * T_max / T_max) * theta[12] * (1.0 + ln(1 - theta[12]) / theta[12] - 1.0 / (1.0 - theta[13])))
-    lngO = lngO + (-5.0 * T_max / T_max) * theta[12] ** 2.0 * theta[13] * (
-                1.0 / (1.0 - theta[13]) + 1.0 / (1.0 - theta[12]) + theta[13] / (2.0 * (1.0 - theta[13]) ** 2.0) - 1.0)
-
-    lngH2 = 0.0
-    lngH2Omelt = 0.0
-    lngHmetal = 0.0
-
-    r_H2Omelt = theta[8] / (1.0 - theta[8]) * (1.0 / 3.0)
-    xB = r_H2Omelt / (1.0 + r_H2Omelt)
-
-    y_model = y_model.at[0].set(ln(theta[5] * theta[1] / theta[6]))
-    y_model = y_model.at[1].set(ln(jnp.sqrt(theta[12]) * theta[3] / theta[11] / jnp.sqrt(theta[1])) + 0.5 * lngSi)
-    y_model = y_model.at[2].set(ln(theta[0] * theta[1] / theta[2]))
-    y_model = y_model.at[3].set(ln(jnp.sqrt(theta[1]) / theta[13] / jnp.sqrt(theta[12])) - lngO - 0.5 * lngSi)
-    y_model = y_model.at[4].set(ln(theta[7] / (theta[14] ** 2)) + lngH2 - 2.0 * lngHmetal)
-    y_model = y_model.at[5].set(ln(theta[3] * theta[1] / theta[4]))
-    y_model = y_model.at[6].set(
-        ln(theta[1] * theta[7] ** 2 / (xB ** 4) / theta[12]) + 2.0 * lngH2 - 2.0 * lngH2Omelt - lngSi)
-
-    p_over_pstd = P / Pstd
-    y_model = y_model.at[7].set(ln(theta[17] / theta[16] / jnp.sqrt(theta[19]) / jnp.sqrt(p_over_pstd)))
-    y_model = y_model.at[8].set(
-        ln(jnp.power(p_over_pstd, 1.5) * theta[15] ** 2 * theta[16] / theta[18] / jnp.sqrt(theta[19])))
-    y_model = y_model.at[9].set(ln(theta[20] / jnp.sqrt(theta[19]) / theta[15] / jnp.sqrt(p_over_pstd)))
-    y_model = y_model.at[10].set(ln(jnp.power(p_over_pstd, 1.5) * jnp.sqrt(theta[19]) * theta[21] / theta[3]))
-    y_model = y_model.at[11].set(ln(jnp.power(p_over_pstd, 1.5) * jnp.sqrt(theta[19]) * theta[22] / theta[0]))
-    y_model = y_model.at[12].set(ln(jnp.power(p_over_pstd, 1.5) * jnp.sqrt(theta[19]) * theta[23] / theta[1]))
-    y_model = y_model.at[13].set(ln(jnp.sqrt(theta[19]) * theta[24] ** 2 / theta[5]))
-    y_model = y_model.at[14].set(ln(theta[7] / theta[15]) + lngH2)
-    y_model = y_model.at[15].set(ln(xB ** 2 / theta[20] / p_over_pstd))
-    y_model = y_model.at[16].set(ln(theta[9] / theta[16] / p_over_pstd))
-    y_model = y_model.at[17].set(ln(theta[10] / theta[17] / p_over_pstd))
-    y_model = y_model.at[18].set(
-        ln(jnp.power(p_over_pstd, -1.5) * theta[25] * jnp.sqrt(theta[19]) / theta[23] / theta[15] ** 2))
-
-    y_model = y_model.at[19].set(
-        theta[27] * (theta[1] + theta[2] + theta[4] + theta[6]) + theta[12] * theta[28] + (theta[23] + theta[25]) *
-        theta[26])
-    y_model = y_model.at[20].set(theta[27] * (theta[0] + theta[2]) + theta[22] * theta[26])
-    y_model = y_model.at[21].set(theta[27] * (
-                theta[0] + 2.0 * theta[1] + 3.0 * theta[2] + theta[3] + 3.0 * theta[4] + theta[5] + 3.0 * theta[6] +
-                theta[8] + theta[9] + 2.0 * theta[10])
-                                 + theta[28] * theta[13] + theta[26] * (
-                                             theta[23] + 2.0 * theta[17] + 2.0 * theta[19] + theta[20] + theta[16]))
-    y_model = y_model.at[22].set(theta[27] * (theta[3] + theta[4]) + theta[28] * theta[11] + theta[26] * theta[21])
-    y_model = y_model.at[23].set(theta[28] * theta[14] + theta[27] * (2.0 * theta[7] + 2.0 * theta[8]) + theta[26] * (
-                2.0 * theta[15] + 2.0 * theta[20] + 4.0 * theta[18] + 4.0 * theta[25]))
-    y_model = y_model.at[24].set(theta[27] * (2.0 * theta[5] + 2.0 * theta[6]) + theta[26] * theta[24])
-    y_model = y_model.at[25].set(theta[27] * (theta[9] + theta[10]) + theta[26] * (theta[18] + theta[17] + theta[16]))
-
-    y_model = y_model.at[26].set(
-        theta[15] + theta[16] + theta[17] + theta[18] + theta[19] + theta[20] + theta[21] + theta[22] + theta[23] +
-        theta[24] + theta[25])
-    y_model = y_model.at[27].set(
-        theta[0] + theta[1] + theta[2] + theta[3] + theta[4] + theta[5] + theta[6] + theta[7] + theta[8] + theta[9] +
-        theta[10])
-    y_model = y_model.at[28].set(theta[11] + theta[12] + theta[13] + theta[14])
-
-    grams_per_mole_silicate = 0.000
-    for i in range(0, 11):
-        grams_per_mole_silicate = grams_per_mole_silicate + theta[i] * mol_wts[i]
+    # y_model = np.zeros(numvar)
+    P=theta[29]
+    Pstd=1.0
+    # Model natural log of equilibrium KDs (no pressures in these quotients)
+    lngSi=-6.65*1873.0/T_max-(12.41*1873.0/T_max)*ln(1.0-theta[12])
+    lngSi=lngSi-((-5.0*1873.0/T_max)*theta[13]*(1.0+ln(1-theta[13])/theta[13]-1.0/(1.0-theta[12])))
+    lngSi=lngSi+(-5.0*1873.0/T_max)*theta[13]**2.0*theta[12]*(1.0/(1.0-theta[12])+1.0/(1.0-theta[13])+theta[12]/(2.0*(1.0-theta[12])**2.0)-1.0)
+    lngO=(4.29-16500.0/T_max)-(-1.0*1873.0/T_max)*ln(1.0-theta[13])
+    lngO=lngO-((-5.0*1873.0/T_max)*theta[12]*(1.0+ln(1-theta[12])/theta[12]-1.0/(1.0-theta[13])))
+    lngO=lngO+(-5.0*1873.0/T_max)*theta[12]**2.0*theta[13]*(1.0/(1.0-theta[13])+1.0/(1.0-theta[12])+theta[13]/(2.0*(1.0-theta[13])**2.0)-1.0)
+    #lngH2=(1.0-theta[7])**2.0*74829.6/(8.3144*T_max) # Regular solution model for xH2 in melt
+    lngH2=0.0
+    #lngH2Omelt=(1.0-theta[8])**2.0*74826.0/(8.3144*T_max) # Regular solution model for xH2O in melt
+    lngH2Omelt=0.0
+    #lngHmetal=(1.0-theta[14])**2.0*(-1.9) # Regular solution model for H in metal with epsilon independent of T
+    x_light=theta[12]+theta[13] # Si + O mole fractions in metal, for psuedo-ternary mixing of H and (Si+O) with Fe below
+    #lngHmetal=-3.8*x_light*(1.0+ln(1.0-x_light)/x_light-1.0/(1.0-theta[14]))
+    #lngHmetal=lngHmetal+3.8*x_light**2.0*theta[14]*(1.0/(1.0-theta[14])+1.0/(1.0-x_light)+theta[14]/(2.0*(1.0-theta[14])**2.0)-1.0)
+    lngHmetal=0.0
+    # Calculate H2O mole fraction on single-oxygen basis
+    r_H2Omelt=theta[8]/(1.0-theta[8])*(1.0/3.0) # assumes oxygen pfu anhydrous = 3, xB=r_H2Omelt/(1+r_H2Omelt)
+    xB=r_H2Omelt/(1.0+r_H2Omelt)
+    y_model[0]=ln(theta[5])+ln(theta[1])-ln(theta[6]) #Rxn 1
+    y_model[1]=0.5*ln(theta[12])+0.5*lngSi+ln(theta[3])-0.5*ln(theta[1])-ln(theta[11])  #Rxn 2
+    y_model[2]=ln(theta[0])+ln(theta[1])-ln(theta[2]) #Rxn 3
+    y_model[3]=0.5*ln(theta[1])-ln(theta[13])-lngO - 0.5*ln(theta[12])-0.5*lngSi #Rxn 4
+    y_model[4]=ln(theta[7])+lngH2-2.0*ln(theta[14])-2.0*lngHmetal  #Rxn 5
+    y_model[5]=ln(theta[3])+ln(theta[1])-ln(theta[4]) #Rxn 6
+    #y_model[6]=ln(theta[1])+2.0*ln(theta[7])+2.0*lngH2-2.0*ln(theta[8])-2.0*lngH2Omelt-ln(theta[12])-lngSi #Rxn 7, here aH2O =xH2O
+    y_model[6]=ln(theta[1])+2.0*ln(theta[7])+2.0*lngH2-4.0*ln(xB)-2.0*lngH2Omelt-ln(theta[12])-lngSi #Rxn 7, here aH2O = xB^2
+    y_model[7]=ln(theta[17])-ln(theta[16])-0.5*ln(theta[19])+ln(P/Pstd)-ln(P/Pstd)-0.5*ln(P/Pstd)
+    y_model[8]=2.0*ln(theta[15])+ln(theta[16])-ln(theta[18])-0.5*ln(theta[19])+2.0*ln(P/Pstd)+ln(P/Pstd)-ln(P/Pstd)-0.5*ln(P/Pstd)
+    y_model[9]=ln(theta[20])-0.5*ln(theta[19])-ln(theta[15])+ln(P/Pstd)-0.5*ln(P/Pstd)-ln(P/Pstd)
+    y_model[10]=0.5*ln(theta[19])+ln(theta[21])-ln(theta[3])+0.5*ln(P/Pstd)+ln(P/Pstd)
+    y_model[11]=0.5*ln(theta[19])+ln(theta[22])-ln(theta[0])+0.5*ln(P/Pstd)+ln(P/Pstd)
+    y_model[12]=0.5*ln(theta[19])+ln(theta[23])-ln(theta[1])+0.5*ln(P/Pstd)+ln(P/Pstd)
+    y_model[13]=0.5*ln(theta[19])+2.0*ln(theta[24])-ln(theta[5])+0.5*ln(P/Pstd)+2.0*ln(P/Pstd)
+    y_model[14]=ln(theta[7])+lngH2-ln(theta[15]) # not including Ptotal in constant, kD is fixed by DG/RT
+    y_model[15]=2.0*ln(xB)-ln(theta[20])-ln(P/Pstd) #Accounting for aH2O =xB^2
+    #y_model[15]=ln(theta[8])+lngH2Omelt-ln(theta[20])-ln(P/Pstd) #Accounting for aH2O =xH2O
+    y_model[16]=ln(theta[9])-ln(theta[16])-ln(P/Pstd)
+    y_model[17]=ln(theta[10])-ln(theta[17])-ln(P/Pstd)  #Rxn 18
+    y_model[18]=ln(theta[25])+0.5*ln(theta[19])-ln(theta[23])-2.0*ln(theta[15])+ln(P/Pstd)+0.5*ln(P/Pstd)-ln(P/Pstd)-2.0*ln(P/Pstd)# Rxn 19: SiO+2H2=SiH4+1/2O
+    
+    #Model mass balance for elements
+    y_model[19]=(theta[27]*(theta[1]+theta[2]+theta[4]+theta[6])+theta[12]*theta[28]+(theta[23]+theta[25])*theta[26]) #Si
+    y_model[20]=(theta[27]*(theta[0]+theta[2])+theta[22]*theta[26]) #Mg
+    y_model[21]=(theta[27]*(theta[0]+2.0*theta[1]+3.0*theta[2]+theta[3]+3.0*theta[4]+theta[5]+3.0*theta[6]+theta[8]+theta[9]+2.0*theta[10]) \
+        + theta[28]*theta[13]+theta[26]*(theta[23]+2.0*theta[17]+2.0*theta[19]+theta[20]+theta[16]) ) #O
+    y_model[22]=(theta[27]*(theta[3]+theta[4])+theta[28]*theta[11]+theta[26]*theta[21]) #Fe
+    y_model[23]=(theta[28]*theta[14]+theta[27]*(2.0*theta[7]+2.0*theta[8])+theta[26]*(2.0*theta[15]+2.0*theta[20]+4.0*theta[18]+4.0*theta[25])) #H
+    y_model[24]=(theta[27]*(2.0*theta[5]+2.0*theta[6])+theta[26]*theta[24]) #Na
+    y_model[25]=(theta[27]*(theta[9]+theta[10])+theta[26]*(theta[18]+theta[17]+theta[16])) #C
+    
+    #Model summing constraint on mole fractions, should sum to unity
+    y_model[26]=(theta[15]+theta[16]+theta[17]+theta[18]+theta[19]+theta[20]+theta[21]+theta[22]+theta[23]+theta[24]+theta[25]) #gas
+    y_model[27]=(theta[0]+theta[1]+theta[2]+theta[3]+theta[4]+theta[5]+theta[6]+theta[7]+theta[8]+theta[9]+theta[10]) #melt
+    y_model[28]=(theta[11]+theta[12]+theta[13]+theta[14]) #metal
+    
+    # Solve for the pressure to match the 'weight' of the atmosphere
+    # Grams per mole initial silicate
+    grams_per_mole_silicate=0.000
+    for i in range(0,11):
+        grams_per_mole_silicate=grams_per_mole_silicate+theta[i]*mol_wts[i]
     # Grams per mole initial atmosphere
-    grams_per_mole_atm = theta[15] * mol_wts[15] + theta[16] * mol_wts[16] + \
-                         theta[17] * mol_wts[17] + theta[18] * mol_wts[18] + theta[19] * mol_wts[19] + \
-                         theta[20] * mol_wts[20] + theta[21] * mol_wts[21] + theta[22] * mol_wts[22] + \
-                         theta[23] * mol_wts[23] + theta[24] * mol_wts[24] + theta[25] * mol_wts[25]
+    grams_per_mole_atm=theta[15]*mol_wts[15]+theta[16]*mol_wts[16]+\
+        theta[17]*mol_wts[17]+theta[18]*mol_wts[18]+theta[19]*mol_wts[19]+ \
+        theta[20]*mol_wts[20]+theta[21]*mol_wts[21]+theta[22]*mol_wts[22]+ \
+        theta[23]*mol_wts[23]+theta[24]*mol_wts[24]+theta[25]*mol_wts[25]
     # Grams per mole initial metal
-    grams_per_mole_metal = theta[11] * 55.847 + theta[12] * 28.0855 + theta[13] * 15.9994 + theta[14] * 1.00794
-    moles_atm = theta[26]
-    moles_silicate = theta[27]
-    moles_metal = theta[28]
-    molefrac_atm = moles_atm / (moles_atm + moles_silicate + moles_metal)
-    molefrac_silicate = moles_silicate / (moles_atm + moles_silicate + moles_metal)
-    molefrac_metal = 1.0 - molefrac_atm - molefrac_silicate
-    grams_atm = molefrac_atm * grams_per_mole_atm  # actually grams_i/mole planet
-    grams_silicate = molefrac_silicate * grams_per_mole_silicate
-    grams_metal = molefrac_metal * grams_per_mole_metal
-    totalmass = grams_atm + grams_silicate + grams_metal
-    massfrac_atm = grams_atm / totalmass
-    # massfrac_silicate=grams_silicate/totalmass
-    # massfrac_metal=grams_metal/totalmass
+    grams_per_mole_metal=theta[11]*55.847+theta[12]*28.0855+theta[13]*15.9994+theta[14]*1.00794
+    moles_atm=theta[26]
+    moles_silicate=theta[27]
+    moles_metal=theta[28]
+    molefrac_atm=moles_atm/(moles_atm+moles_silicate+moles_metal)
+    molefrac_silicate=moles_silicate/(moles_atm+moles_silicate+moles_metal)
+    molefrac_metal=1.0-molefrac_atm-molefrac_silicate
+    grams_atm=molefrac_atm*grams_per_mole_atm  #actually grams_i/mole planet
+    grams_silicate=molefrac_silicate*grams_per_mole_silicate
+    grams_metal=molefrac_metal*grams_per_mole_metal
+    totalmass=grams_atm+grams_silicate+grams_metal
+    massfrac_atm=grams_atm/totalmass
+    massfrac_silicate=grams_silicate/totalmass
+    massfrac_metal=grams_metal/totalmass
 
     # Estimate atmospheric pressure at the surface of the planet: fratio is the Matm/Mplanet mass ratio
-    fratio = massfrac_atm / (1.0 - massfrac_atm)
-    P_guess = 1.2e6 * fratio * (Mplanet_Mearth) ** (2.0 / 3.0)  # bar
+    fratio=massfrac_atm/(1.0-massfrac_atm)
+    P_guess=1.2e6*fratio*(Mplanet_Mearth)**(2.0/3.0) #bar
     # Error in pressure estimate relative to weight of atmosphere, should be 0
-    y_model = y_model.at[29].set(100.0 * (P_guess - theta[29]) / P_guess)  # Added a multiplier here to force better pressure solutions
-
+    y_model[29]=100.0*(P_guess-theta[29])/P_guess #Added a multiplier here to force better pressure solutions
+    
     return y_model
 #--------------------------------------------------------------------------------------------------------
 # DEFINE LIKELIHOOD FUNCTION, making use of model function above.
 # Notice by using the sum, this is the logarithm of the likelihood probability.
 # The total probability would be the product of exponentials of the square differences etc.
 
-@jit
+@njit
 def lnlike(theta,y,yerr, y_model):
     y_model=model(theta, y_model)
     diffs=((y-y_model)**2.0)/yerr**2.0
-    lnlike=-0.5*jnp.sum(diffs)
+    lnlike=-0.5*sum(diffs)
     return lnlike
 #--------------------------------------------------------------------------------------------------------
 # DEFINE PRIORS using simple square function for each variable
@@ -2296,29 +2314,41 @@ def lnlike(theta,y,yerr, y_model):
 # probabilities, e.g., 0 for in range, -infinity if out the range for the priors.
 # Formulated this way, these are uninformative priors.
 
-@jit
+@njit
 def lnprior(theta):
     # Priors on mole fractions require them to be between 0 and 1 else ln(probability) is -infinity
-    # This structure relies on the first encountered return applies
-    prior = jnp.where((theta[:25] < 0.0) | (theta[:25] > 1.0), -jnp.inf, 0.0)
-
-    # Check for moles of phases, must be positive
-    prior = jnp.where((theta[26] < 0.0) | (theta[27] < 0.0) | (theta[28] < 0.0), -jnp.inf, prior)
-
-    return jnp.sum(prior)
+    # This structure relies on first encountered return applies
+    for i in range(0,25):
+        if theta[i] < 0.0:
+            return -np.inf
+        if theta[i] > 1.00:
+            return -np.inf
+    # Special prior for water in melt using aH2O = xB^2
+    #if theta[8] > 0.40:
+    #    return -np.inf
+    # Priors for moles of phases, must be positive
+    if theta[26] < 0.0:
+        return -np.inf
+    if theta[27] < 0.0:
+        return -np.inf
+    if theta[28] < 0.0:
+        return -np.inf
+    return 0.0
 #--------------------------------------------------------------------------------------------------------
 # POSTERIOR PROBABILITIES as product of likelihood and priors (i.e., sum of logs).
 # We add the output from the functions above because they return logs of
 # probabilities. If outside of priors, return infinitely bad probability
 # as -inf since this would be the log of a very tiny number.
 
-@jit
-def lnprob(theta, y, yerr, y_model):
-    lp = lnprior(theta)
-    like = lnlike(theta, y, yerr, y_model)
-
-    # Use JAX's functional programming to handle the conditional logic
-    return jnp.where(jnp.isneginf(lp) | jnp.isnan(like), -jnp.inf, lp + like)
+@njit
+def lnprob(theta,y,yerr, y_model):
+    lp=lnprior(theta)
+    if lp == -np.inf:
+        return -np.inf
+    like=lnlike(theta,y,yerr, y_model)
+    if math.isnan(like):
+        return -np.inf
+    return lp+like
 #--------------------------------------------------------------------------------------------------------
 # Make a tuple with the data to be used by emcee, this will be a list of
 # arguments that tells emcee the list required to call the probability function,
@@ -2448,7 +2478,8 @@ xH2_xH2O_silicate=result[7]/result[8]
 print('')
 print('xH2/xH2O silicate =',xH2_xH2O_silicate)
 DIW_apparent=2.0*log((result[3]+result[4])/0.85)
-DIW_actual=2.0*log((result[3]+result[4]/result[11]))
+#DIW_actual=2.0*log((result[3]+result[4]/result[11])) #Incorrect expression
+DIW_actual = 2.0*log((result[3]+result[4])/result[11]) #new expression given by Edward Young
 print('DIW_silicate_for_xFe_metal=0.85 =',DIW_apparent)
 print('DIW_actual = ',DIW_actual)
 
@@ -2924,10 +2955,6 @@ copy_inputs(name_initial)
 #figure.savefig("corner_atmosphere.png")
 #plt.close()
 
-
+time_end = time.time()
+print(f"Time elapsed for full run: {time_end-time_start}s")
 print('End.')
-
-
-
-
-

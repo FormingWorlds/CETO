@@ -1,3 +1,18 @@
+# Virtual environment and pip install requirements
+venv
+requirements.txt
+
+# Results directory
+results/run1
+results/
+
+# GRT directory (used for reference)
+source/codeYoung/GRT_1300_6000
+
+# temporary progress files
+progress.png 
+progress.txt
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

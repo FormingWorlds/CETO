@@ -389,7 +389,7 @@ d=-6.640301e-10
 e=-8.246121e-9
 f=-10.80543
 g=72.54094
-h=12.39602
+h=12.39502
 HmetalFe=12.40+a*ti+(b*ti**2.0)/2.0+(c*ti**3.0)/3.0+(d*ti**4.0)/4.0-(e/ti)+f-h
 HmetalFe=HmetalFe*1000.0 #convert kJ to J
 SmetalFe=a*ln(ti)+b*ti+(c*ti**2.0)/2.0+(d*ti**3.0)/3.0-(e/(2.0*ti**2.0))+g
@@ -635,7 +635,7 @@ for i in range(0,TKlength):
 # from NIST
 ti=TK/1000.0
 a=46.024
-b=-1884667e-8
+b=-1.884667e-8
 c=6.094750e-9
 d=-6.640301e-10
 e=-8.246121e-9
@@ -816,7 +816,7 @@ SgasH2=np.zeros(TKlength)
 GgasH2=np.zeros(TKlength)
 i=0
 while i < TKlength:
-    if TK[i] < 6000.0:
+    if TK[i] <= 6000.0:
         ti=TK[i]/1000.0
         a=43.41356
         b=-4.293079
@@ -2428,7 +2428,7 @@ xH2_xH2O_silicate=result[7]/result[8]
 print('')
 print('xH2/xH2O silicate =',xH2_xH2O_silicate)
 DIW_apparent=2.0*log((result[3]+result[4])/0.85)
-DIW_actual=2.0*log((result[3]+result[4]/result[11]))
+DIW_actual=2.0*log((result[3]+result[4])/result[11])
 print('DIW_silicate_for_xFe_metal=0.85 =',DIW_apparent)
 print('DIW_actual = ',DIW_actual)
 

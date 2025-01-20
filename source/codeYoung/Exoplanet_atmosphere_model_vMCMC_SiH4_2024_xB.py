@@ -18,7 +18,15 @@ import warnings
 from multiprocessing.pool import Pool
 from multiprocessing import get_start_method
 from multiprocessing import get_context
-from numba import njit
+import argparse #added for command line arguments
+import json #added for flexible file handling
+
+## Argument Parser 
+parser=argparse.ArgumentParser()
+parser.add_argument("--inputfile",nargs="?",default="initial_atm_vMCMC_2024.txt",type=str)
+parser.add_argument("--key", nargs='?', default=None, type=str)
+parser.add_argument("--value",nargs='?',default=None,type=float)
+args=parser.parse_args()
 
 print(" ")
 print(" ")
@@ -40,6 +48,7 @@ print("--------------------------------------------------")
 print("Read above! ")
 time.sleep(5.0)
 
+time_start = time.time()
 # Supress warnings
 #warnings.simplefilter('ignore', RuntimeWarning)
 
@@ -75,12 +84,37 @@ numvar=30  # ORIGINALLY 2
 var=np.zeros(numvar)
 
 # VALUES CONTAIN ALL MODEL INPUT PARAMETERS IN ORDER
-print('Opening initial_atm_vMCMC_2024.txt...')
-name="initial_atm_vMCMC_2024.txt"
+name = args.inputfile
+print(f'Opening {name}...')
 count = len(open(name).readlines())
 print('  Input file length = ', count)
-values=np.genfromtxt(name,'float')  # Read from file into values
-print('')
+
+if args.inputfile == "initial_atm_vMCMC_2024.txt":
+    keylist = [
+        'MgO_melt', 'SiO2_melt', 'MgSiO3_melt', 'FeO_melt', 'FeSiO3_melt',
+        'Na2O_melt', 'Na2SiO3_melt', 'H2_melt', 'H2O_melt', 'CO_melt',
+        'CO2_melt', 'Fe_metal', 'Si_metal', 'O_metal', 'H_metal',
+        'H2_gas', 'CO_gas', 'CO2_gas', 'CH4_gas', 'O2_gas', 'H2O_gas',
+        'Fe_gas', 'Mg_gas', 'SiO_gas', 'Na_gas', 'SiH4_gas', 'moles_atm',
+        'moles_melt', 'moles_metal', 'planet_mass', 'T_surface', 'p', 'wt_massbalance',
+        'wt_summing', 'wt_atm', 'wt_solub', 'wt_melt', 'wt_evap', 'wt1', 'wt2', 'wt3',
+        'wt4', 'wt5', 'wt6', 'wt7', 'wt8', 'wt9', 'wt10', 'wt11',
+        'wt12', 'wt13', 'wt14', 'wt15', 'wt16', 'wt17', 'wt18', 'wt19',
+        'wt20', 'wt21', 'wt22', 'wt23', 'wt24', 'wt25', 'wt26', 'wt27',
+        'wt28', 'wt29', 'seed', 'niters', 'MCMCoffset', 'T_core_mantle_eq'
+                ]
+    vals = np.genfromtxt(args.inputfile)
+    inputdict = dict(zip(keylist, vals))
+else:
+    with open(args.inputfile, mode='r', encoding='utf-8') as handle:
+        inputdict = json.load(handle)
+
+if args.key != None:
+    inputdict[args.key] = args.value
+    values = list(inputdict.values())
+else:
+    values = list(inputdict.values())
+
 for i in range(0,numvar-1):
     var[i]=values[i]
 var[numvar-1]=values[31]
@@ -1722,8 +1756,6 @@ print('Scaling for f27 through f29 =',wtx)
 
 #--------------------------------------------------------------------------------------------------------
 #Function to minimize in order to solve for mole fractions and phase abundances at equilibrium
-
-@njit
 def func(var):
     P=var[29]
     Pstd=1.0
@@ -2166,9 +2198,7 @@ print('')
 
 #--------------------------------------------------------------------------------------------------------
 # Our model function
-@njit
-def model(theta, y_model):
-    # y_model = np.zeros(numvar)
+def model(theta):
     P=theta[29]
     Pstd=1.0
     # Model natural log of equilibrium KDs (no pressures in these quotients)
@@ -2264,10 +2294,8 @@ def model(theta, y_model):
 # DEFINE LIKELIHOOD FUNCTION, making use of model function above.
 # Notice by using the sum, this is the logarithm of the likelihood probability.
 # The total probability would be the product of exponentials of the square differences etc.
-
-@njit
-def lnlike(theta,y,yerr, y_model):
-    y_model=model(theta, y_model)
+def lnlike(theta,y,yerr):
+    y_model=model(theta)
     diffs=((y-y_model)**2.0)/yerr**2.0
     lnlike=-0.5*sum(diffs)
     return lnlike
@@ -2276,8 +2304,6 @@ def lnlike(theta,y,yerr, y_model):
 # This function output is prescribed by what emcee uses for the prior
 # probabilities, e.g., 0 for in range, -infinity if out the range for the priors.
 # Formulated this way, these are uninformative priors.
-
-@njit
 def lnprior(theta):
     # Priors on mole fractions require them to be between 0 and 1 else ln(probability) is -infinity
     # This structure relies on first encountered return applies
@@ -2302,13 +2328,11 @@ def lnprior(theta):
 # We add the output from the functions above because they return logs of
 # probabilities. If outside of priors, return infinitely bad probability
 # as -inf since this would be the log of a very tiny number.
-
-@njit
-def lnprob(theta,y,yerr, y_model):
+def lnprob(theta,y,yerr):
     lp=lnprior(theta)
     if lp == -np.inf:
         return -np.inf
-    like=lnlike(theta,y,yerr, y_model)
+    like=lnlike(theta,y,yerr)
     if math.isnan(like):
         return -np.inf
     return lp+like
@@ -2316,10 +2340,10 @@ def lnprob(theta,y,yerr, y_model):
 # Make a tuple with the data to be used by emcee, this will be a list of
 # arguments that tells emcee the list required to call the probability function,
 # so this should match the lnprob argument list
-data = (y,yerr, y_model)
+data = (y,yerr)
 
 # Print current model (not parameters) before starting MCMC
-print('y(current model)= \n',model(soln.x, y_model))
+print('y(current model)= \n',model(soln.x))
 print('')
 print('yerr(errors for model)= \n ',yerr)
 print('')
@@ -2346,18 +2370,16 @@ p0=[(theta)+ranoffset*np.random.randn(n) for i in range(nwalkers)]  #+1.0e-9*np.
 # for emcee.
 def main(p0,nwalkers,niter,n,lnprob,data):
     ctx = get_context('fork')
-    # with Pool(6,context=ctx) as pool:
-    # sampler = emcee.EnsembleSampler(nwalkers, n, lnprob, args=data, pool=pool)
-    sampler = emcee.EnsembleSampler(nwalkers, n, lnprob, args=data)
-
-
-    print("Initial burn in running...")
-    pos,_, _ = sampler.run_mcmc(p0,500)  # initial run, save position (i.e., model parameters)
-
-    sampler.reset()  # reset results from sampler for actual search
-
-    print("Running full MCMC search...")
-    pos, prob, state = sampler.run_mcmc(pos, niter_eff, skip_initial_state_check=False, progress=True, thin_by=thin) # run actual search starting at burn-in position
+    with Pool(6,context=ctx) as pool:
+        sampler = emcee.EnsembleSampler(nwalkers, n, lnprob, args=data, pool=pool)
+    
+        print("Initial burn in running...")
+        pos,_, _ = sampler.run_mcmc(p0,500)  # initial run, save position (i.e., model parameters)
+    
+        sampler.reset()  # reset results from sampler for actual search
+    
+        print("Running full MCMC search...")
+        pos, prob, state = sampler.run_mcmc(pos, niter_eff, skip_initial_state_check=False, progress=True, thin_by=thin) # run actual search starting at burn-in position
     
     return sampler, pos, prob, state
 
@@ -2385,7 +2407,7 @@ print('sampler.flatlnprobability shape = ',np.shape(posteriors))
 result=samples[np.argmax(sampler.flatlnprobability)]
 
 # Best-fit final model consisting of equilibrium constants, total moles of components, and mole fraction sums
-best_fit_model = model(result, y_model)
+best_fit_model = model(result)
 
 # Calculate goodness of fit for this best-fit model
 chi_square=sum(((y-best_fit_model)**2.0)/yerr**2.0)
@@ -2441,7 +2463,9 @@ xH2_xH2O_silicate=result[7]/result[8]
 print('')
 print('xH2/xH2O silicate =',xH2_xH2O_silicate)
 DIW_apparent=2.0*log((result[3]+result[4])/0.85)
-DIW_actual=2.0*log((result[3]+result[4]/result[11]))
+# DIW_actual=2.0*log((result[3]+result[4]/result[11])) #Incorrect Expression
+DIW_actual = 2.0*log((result[3]+result[4])/result[11]) #new expression given by Edward Young
+
 print('DIW_silicate_for_xFe_metal=0.85 =',DIW_apparent)
 print('DIW_actual = ',DIW_actual)
 
@@ -2917,5 +2941,11 @@ copy_inputs(name_initial)
 #figure.savefig("corner_atmosphere.png")
 #plt.close()
 
-
+time_end = time.time()
+print(f"Time elapsed for full run: {time_end-time_start}s")
 print('End.')
+
+
+
+
+
