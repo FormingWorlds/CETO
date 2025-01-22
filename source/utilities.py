@@ -97,42 +97,60 @@ def moles_in_system(el, D):
             
     return D["moles_melt"]*el_inmelt + D["moles_metal"]*el_inmetal + D["moles_atm"]*el_ingas
 
-# nSi = moles_in_system('Na', D)
-# nMg = moles_in_system('Mg', D)
-# nNa = moles_in_system('Na', D)
-# nFe = moles_in_system('Fe', D)
-# nH = moles_in_system('H', D)
-# nC = moles_in_system('C', D)
-# nO = moles_in_system('O', D)
+def get_bounds(D):
+    """Creates 2d array containing upper and lower bounds for each element in optimisation function based
+       on model input. Conditions are imposed on species mole fractions (elements 0-25), moles of phases 
+       (elements 26, 27, 28) and the pressure (element 29). Boundary conditions are adapted from original
+       version of code by Edward Young.
+       Parameters:
+       D (dict)                 : dictionary containing model input, used to scale boundary condition for
+                                elements 27, 27 and 28.
+       Returns:
+       bounds (np.2darray)      : boundary conditions (low, high) for each of the 30 elements of the model's
+                                optimisation function."""
+    bounds = np.zeros((30,2))
+    for i in range(0,26):           # Set boundary conditions over first 25 elements through loop, we set 
+        if i == 7:                  # specific boundaries for several reactions.
+            bounds[i, 0] = 1.0e-15 
+            bounds[i, 1] = 0.4
+        elif i == 8:
+            bounds[i, 0] = 1.0e-12
+            bounds[i, 1] = 0.4
+        elif i == 21 or i == 22 or i == 23:
+            bounds[i, 0] = 1.0e-15
+            bounds[i, 1] = 0.99999
+        else:
+            bounds[i, 0] = 1.0e-20
+            bounds[i, 1] = 0.99999
 
-## Boundary Conditions, hardcoded for now. Conditions are imposed on species mole fractions (indices 0-25), 
-## moles of phases (indices 26, 27, 28) and pressure (index 29).
-# bounds = np.zeros((30))
-# for i in range(0, 26):       # we set boundary conditions on mole fractions for all species, and use modified
-#     if i == 7:               # conditions for a few reactions; including H2 in melt (i==7) and H2O (i==8)
-#         bounds[i,0] = 1.0e-15
-#         bounds[i,1] = 0.4
-#     elif i == 8:
-#         bounds[i,0] = 1.0e-12
-#         bounds[i,1] = 0.4
+    ## Boundaries on total # moles per phase
+    bounds[26, 0] = D["moles_atm"]*1.0e-20 
+    bounds[26, 1] = D["moles_atm"]*50.0
+    bounds[27, 0] = D["moles_melt"]*0.5
+    bounds[27, 1] = D["moles_melt"]*2.0
+    bounds[28, 0] = D["moles_metal"]*0.5
+    bounds[28, 1] = D["moles_metal"]*2.0
 
-#     elif i == 21 or i == 22 or i == 23:
-#         bounds[i, 0] = 1.0e-15
-#         bounds[i, 1] = 0.99999
-#     else:
-#         bounds[i,0] = 1.0e-20 
-#         bounds[i,1] = 0.99999
+    ## Boundaries on pressure
+    bounds[29, 0] = 1.0e-3
+    bounds[29, 1] = 9.0e5
 
-# bounds[26, 0] = D["moles_atm"]*1.0e-20
-# bounds[26, 1] = D["moles_atm"]*50.0
+    return bounds
 
-# bounds[27, 0] = D["moles_melt"]*0.5
-# bounds[27, 1] = D["moles_melt"]*2.0
+def sigmoidal_penalty(f, val, sharp, tol, mag):
+    """Assigns a penalty function to provided function f according to a 2-sided logistic function.
+       Penalty is applied to the region (-tol : 0.0 : tol).
+       Parameters:
+       f ()                     : 
+       val (float)              : x value of f midpoint.
+       sharp (float)            : sharpness of logistic function.
+       tol (float)              : tolerance or width of area on which the penalty applies
+       mag (float)              : scale factor for magnitude of the penalty
+       
+       Returns:
+       f_penalty ()             : calculated penalty applied to function f """
+    f_penalty = 1.0 - 1.0/(1.0 + np.exp(-sharp*((val+tol)-f))) + 1.0/(1.0 + np.exp(-sharp*((val-tol)-f)))
+    return f_penalty*mag
 
-# bounds[28, 0] = D["moles_metal"]*0.5
-# bounds[28, 1] = D["moles_metal"]*2.0
-
-# bounds[29, 0] = 1.0e-3
-# bounds[29, 1] = 9.0e5
 
     
