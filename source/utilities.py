@@ -5,6 +5,8 @@ from numpy import log10 as log
 
 from pathlib import Path
 
+from constants import *
+
 def readconfig(path):
     """"Reads model config file (.txt) and converts input into dictionary for easy handling.
         Parameters:
@@ -66,36 +68,63 @@ def moles_in_system(el, D):
     el_inmelt = 0
     el_ingas = 0
     el_inmetal = 0
-    for i in D:
-        if el in i and '_melt' in i:
-            if (el+'2') not in i and (el+'3') not in i and (el+'4') not in i:
-                el_inmelt += D[i]
+    for key in D:
+        if el in key and '_melt' in key:
+            if (el+'2') not in key and (el+'3') not in key and (el+'4') not in key:
+                el_inmelt += D[key]
             else:
-                for j in range(2,5):
-                    if (el+str(j)) in i:
-                        el_inmelt += j*D[i]
+                for coeff in range(2,5):
+                    if (el+str(coeff)) in key:
+                        el_inmelt += coeff*D[key]
                     else:
                         pass
-        elif el in i and '_metal' in i:
-            if (el+'2') not in i and (el+'3') not in i and (el+'4') not in i:
-                el_inmetal += D[i]
+        elif el in key and '_metal' in key:
+            if (el+'2') not in key and (el+'3') not in key and (el+'4') not in key:
+                el_inmetal += D[key]
             else:
-                for j in range(2,5):
-                    if (el+str(j)) in i:
-                        el_inmetal += j*D[i]
+                for coeff in range(2,5):
+                    if (el+str(coeff)) in key:
+                        el_inmetal += coeff*D[key]
                     else:
                         pass
-        elif el in i and '_gas' in i:
-            if (el+'2') not in i and (el+'3') not in i and (el+'4') not in i:
-                el_ingas += D[i]
+        elif el in key and '_gas' in key:
+            if (el+'2') not in key and (el+'3') not in key and (el+'4') not in key:
+                el_ingas += D[key]
             else:
                 for j in range(2,5):
-                    if (el+str(j)) in i:
-                        el_ingas += j*D[i]
+                    if (el+str(coeff)) in key:
+                        el_ingas += coeff*D[key]
                     else:
                         pass
             
     return D["moles_melt"]*el_inmelt + D["moles_metal"]*el_inmetal + D["moles_atm"]*el_ingas
+
+def gpm_phases(D):
+    """Computes gram per mole of phase for atmosphere, silicate melt and metal core via species
+       molecular weights.
+       Parameters:
+       D (dict)             : Dictionary containing model input, retrieves mole fractions of species
+                            in the three respective phases.
+       Returns:
+       gpm_gas (float)      : total number of grams per mole of atmosphere
+       gpm_melt (float)     : total number of grams per mole of silicate mantle
+       gpm_metal (float)    : total number of grams per mole of metal core."""
+    gpm_gas = 0
+    gpm_melt = 0
+    gpm_metal = 0
+    for key in D:
+        if "_gas" in key and 'moles' not in key and 'wt' not in key:
+            speciesname = key.replace('_gas','')
+            gpm_gas += D[key]*molwts[speciesname]
+        elif "_melt" in key and 'moles' not in key and 'wt' not in key:
+            speciesname = key.replace('_melt','')
+            gpm_melt += D[key]*molwts[speciesname]
+        elif "_metal" in key and 'moles' not in key and 'wt' not in key and 'bool' not in key:
+            speciesname = key.replace('_metal','')
+            gpm_metal += D[key]*molwts[speciesname]
+        else:
+            pass
+    return gpm_gas, gpm_melt, gpm_metal
 
 def get_bounds(D):
     """Creates 2d array containing upper and lower bounds for each element in optimisation function based
