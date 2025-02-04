@@ -2,9 +2,9 @@ from __future__ import annotations
 import numpy as np
 from numpy import log as ln
 
-from thermodynamics import calculate_GRT
-from utilities import *
-from activity import get_activity
+from source.thermodynamics import calculate_GRT
+from source.utilities import *
+from source.activity import get_activity
 
 def optimisationfunction(D, Pstd=1.0, T_low=1300, T_num=200):
     """Sets up the system of 30 nonlinear equations in 30 variables to be solved for.

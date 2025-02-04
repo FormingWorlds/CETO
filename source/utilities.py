@@ -5,7 +5,7 @@ from numpy import log10 as log
 
 from pathlib import Path
 
-from constants import *
+from source.constants import *
 
 def readconfig(path):
     """"Reads model config file (.txt) and converts input into dictionary for easy handling.
