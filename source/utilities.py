@@ -126,6 +126,34 @@ def gpm_phases(D):
             pass
     return gpm_gas, gpm_melt, gpm_metal
 
+def calculate_pressure(D):
+    """Calculates pressure according to equation 8 from Schlichting & Young (2022).
+    Parameters:
+    D (dict)                : Dictionary containing model input, retrieves planet initial mass and moles in
+                            each phase to calculate initial surface pressure in bar
+    Returns:
+    P (float)               : Surface pressure in bar"""
+    
+    gpm_gas, gpm_melt, gpm_metal = gpm_phases(D)
+    moles_total = D["moles_atm"] + D["moles_melt"] + D["moles_metal"]
+
+    molefrac_atm = D["moles_atm"] / moles_total
+    molefrac_melt = D["moles_melt"] / moles_total
+    molefrac_metal = D["moles_metal"] / moles_total
+
+    grams_atm = molefrac_atm * gpm_gas
+    grams_melt = molefrac_melt * gpm_melt
+    grams_metal = molefrac_metal * gpm_metal
+
+    totalmass = grams_atm + grams_melt + grams_metal
+
+    massfrac_atm = grams_atm / totalmass
+
+    fratio = massfrac_atm/(1.0-massfrac_atm)
+    P = 1.2e6*fratio*(D["M_p"])**(2/3) # surface pressure in bar
+    return P
+
+
 def get_bounds(D):
     """Creates 2d array containing upper and lower bounds for each element in optimisation function based
        on model input. Conditions are imposed on species mole fractions (elements 0-25), moles of phases 
