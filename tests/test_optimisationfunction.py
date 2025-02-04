@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.testing as npt
 from source.utilities import *
-from source.model import optimisationfunction
+from source.model import optimisationfunction_initial
 
 ## Reading model input from config file
 projectdir = Path(__file__).parent
@@ -12,9 +12,9 @@ D = readconfig(path_to_config)
 path_to_expected = projectdir / 'testvalues_optimisation.txt'
 
 def test_optimisationfunction():
-    test_input = optimisationfunction(D)
+    test_input = optimisationfunction_initial(D)
     expected_result = np.genfromtxt(path_to_expected)
-    npt.assert_array_almost_equal(test_input, expected_result, decimal=4)
+    npt.assert_array_almost_equal(test_input, expected_result, decimal=6)
 
 
 

@@ -5,7 +5,10 @@ from numpy import log10 as log
 
 from pathlib import Path
 
-from source.constants import *
+try:
+    from constants import *
+except:
+    from source.constants import *
 
 def readconfig(path):
     """"Reads model config file (.txt) and converts input into dictionary for easy handling.

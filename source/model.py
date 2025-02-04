@@ -2,20 +2,38 @@ from __future__ import annotations
 import numpy as np
 from numpy import log as ln
 
-from source.thermodynamics import calculate_GRT
-from source.utilities import *
-from source.activity import get_activity
+try:
+    from thermodynamics import calculate_GRT
+    from utilities import *
+    from activity import get_activity
+except:
+    from source.thermodynamics import calculate_GRT
+    from source.utilities import *
+    from source.activity import get_activity
 
-def optimisationfunction(D, Pstd=1.0, T_low=1300, T_num=200):
-    """Sets up the system of 30 nonlinear equations in 30 variables to be solved for.
-    WIP"""
+
+def optimisationfunction_initial(D, Pstd=1.0, T_low=1300, T_num=200):
+    """Function establishes and computes initial values of 29 equations in 29 variables, taken from input file D. The first 19 reactions are equilibrium reactions for the 19 basis reactions of the model.
+       Reactions 20 - 26 constrain the mass balance of the elements (H, C, O, Si, Mg, Fe). Reactions 27, 28 and 29 set summing constraints on the mole fractions of melt, atmosphere and metal phases.
+       Function returns values f1 - f29 of each equation.
+       Parameters:
+        D (dict)                : input dictionary containing model input. Function uses mole fractions of planet constituents, moles of atmosphere, melt and metal, surface temperature
+                                and core-mantle equilibration temperature.
+        Pstd (float, optional)  : Deviation for pressure terms of evaporation reactions. Default is 1.0, indicating no deviation.
+        T_low (float, optional) : Lower bound for temperature array over which thermodynamics are calculated, default is 1300 K
+        T_num (float, optional) : Number of points in temperature array over which Gibbs free energies are calculated, default is 200.
+       Returns:
+        F (list)                : list containing initial values of each equation (length 29), in order."""
 
     ## Get thermodynamics
     T_array  = np.linspace(T_low, D["T_eq"], T_num)
     GRT_list = calculate_GRT(T_array)
     GRT_vals = []; GRT_keys = []
     for i in range(len(GRT_list)):
-        GRT_T = GRT_list[i][np.argmin(np.abs(T_array - D["T_surface"]))] #Find Gibbs at closest T to surface T
+        if i == 1 or i == 3 or i == 4 or i == 6:
+            GRT_T = GRT_list[i][np.argmin(np.abs(T_array - D["T_eq"]))] # For reactions 2, 4, 5, 7 use Gibbs free energy at higher temperature (T_eq) for optimisationfunction
+        else:
+            GRT_T = GRT_list[i][np.argmin(np.abs(T_array - D["T_surface"]))] # Otherwise just find Gibbs free energy at closest T to surface temperature
         GRT_vals.append(GRT_T)
         GRT_keys.append(f"GRT{i+1}_T")
     G = dict(zip(GRT_keys, GRT_vals))
@@ -23,12 +41,12 @@ def optimisationfunction(D, Pstd=1.0, T_low=1300, T_num=200):
     ## Surface pressure
     P = calculate_pressure(D)
     
-    ## Get activities
+    ## Get activities for Si, O, H2, H2O in melt phase, H in metal phase.
     lngSi, lngO, lngH2, lngH2O_melt, lngH_metal, xB = get_activity(D)
 
     ## Equilibrium equations for reactions R1 - R19
     f1 = ln(D["Na2O_melt"]) + ln(D["SiO2_melt"]) - ln(D["Na2SiO3_melt"]) + G["GRT1_T"]
-    f2 = 0.5*ln(D["Si_metal"]) +0.5*lngSi + ln(D["FeO_melt"]) - 0.5*ln(D["SiO2_melt"]) - \
+    f2 = 0.5*ln(D["Si_metal"]) + 0.5*lngSi + ln(D["FeO_melt"]) - 0.5*ln(D["SiO2_melt"]) - \
         ln(D["Fe_metal"]) + G["GRT2_T"]
     f3 = ln(D["MgO_melt"]) + ln(D["SiO2_melt"]) - ln(D["MgSiO3_melt"]) + G["GRT3_T"]
     f4 = 0.5*ln(D["SiO2_melt"]) - ln(D["O_metal"]) - lngO -0.5*ln(D["Si_metal"]) -0.5*lngSi + G["GRT4_T"]
@@ -75,14 +93,8 @@ def optimisationfunction(D, Pstd=1.0, T_low=1300, T_num=200):
     f28 = 1 - np.sum([D[i] for i in D if "_metal" in i and "moles" not in i and "wt" not in i and "bool" not in i])
     f29 = 1 - np.sum([D[i] for i in D if "_gas" in i and "moles" not in i and "wt" not in i])
 
-    F = np.array([f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, 
+    F_initial = np.array([f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, 
              f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29])
     
-    # wgas = 1.0 / np.max(np.abs(F))
-    # wtn = D["wt_massbalance"]*wgas
-    # wtx = D["wt_summing"]*wgas
-
-    # weights = np.array([wgas, wtn, wtx])
-    
-    return F
+    return F_initial
 
