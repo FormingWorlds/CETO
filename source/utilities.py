@@ -202,16 +202,38 @@ def sigmoidal_penalty(f, val, sharp, tol, mag):
     """Assigns a penalty function to provided function f according to a 2-sided logistic function.
        Penalty is applied to the region (-tol : 0.0 : tol).
        Parameters:
-       f ()                     : 
-       val (float)              : x value of f midpoint.
-       sharp (float)            : sharpness of logistic function.
-       tol (float)              : tolerance or width of area on which the penalty applies
-       mag (float)              : scale factor for magnitude of the penalty
+       f (float or array)           : float value of function or array of function values.
+       val (float)                  : x value of f midpoint.
+       sharp (float)                : sharpness of logistic function.
+       tol (float)                  : tolerance or width of area on which the penalty applies.
+       mag (float)                  : scale factor for magnitude of the penalty.
        
        Returns:
-       f_penalty ()             : calculated penalty applied to function f """
+       f_penalty (float or array)   : calculated penalty applied to function f."""
     f_penalty = 1.0 - 1.0/(1.0 + np.exp(-sharp*((val+tol)-f))) + 1.0/(1.0 + np.exp(-sharp*((val-tol)-f)))
-    return f_penalty*mag
+    return f*(1 + f_penalty*mag)
+
+def smoothTriangle(data, degree):
+    """Function used in Young code to estimate cost (or mean value) of the objective function.
+       Its precise workings and intentions are still unclear; this docstring will be more descriptive
+       in the future.
+       Parameters:
+       data (list or array)     : list or array of values
+       degree (int)             : integer that controls dimensions of triangle to be drawn from
+
+       Returns:
+       smoothed (array)         : array of 'smoothed' values."""
+    triangle = np.concatenate((np.arange(degree+1), np.arange(degree)[::-1]))
+    smoothed = []
+    for i in range(degree, (len(data)-2*degree)):
+        point = data[i:i+len(triangle)]*triangle
+        smoothed.append(np.sum(point)/np.sum(triangle))
+    smoothed = [smoothed[0]]*int(degree + degree/2) + smoothed
+    while len(smoothed) < len(data):
+        smoothed.append(smoothed[-1])
+    return smoothed
+
+
 
 
     
