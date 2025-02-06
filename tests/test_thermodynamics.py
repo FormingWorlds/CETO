@@ -3,6 +3,7 @@ import numpy.testing as npt
 import pytest
 from source.thermodynamics import calculate_GRT
 
+
 ## Define some test cases via pytest parametrisation
 @pytest.mark.parametrize(
     "test, expected",
