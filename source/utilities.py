@@ -5,6 +5,7 @@ from numpy import log10 as log
 
 from pathlib import Path
 
+
 try:
     from constants import *
 except:

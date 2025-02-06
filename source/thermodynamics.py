@@ -4,8 +4,6 @@ try:
     from source.constants import (log_to_ln, R_gas)
 except:
     from constants import (log_to_ln, R_gas)
-    # R_gas = 8.31446261815324     # J/K/mole
-    # log_to_ln = 2.302585093      # change base of logarithms
 
 import numpy as np
 from numpy import log as ln

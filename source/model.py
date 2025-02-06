@@ -19,7 +19,7 @@ def optimisationfunction_initial(D, Pstd=1.0, T_low=1300, T_num=200):
        Parameters:
         D (dict)                : input dictionary containing model input. Function uses mole fractions of planet constituents, moles of atmosphere, melt and metal, surface temperature
                                 and core-mantle equilibration temperature.
-        Pstd (float, optional)  : Deviation for pressure terms of evaporation reactions. Default is 1.0, indicating no deviation.
+        Pstd (float, optional)  : Pressure at standard state, chosen to be 1.0 bar by default (As described in Schlichting&Young (2022))
         T_low (float, optional) : Lower bound for temperature array over which thermodynamics are calculated, default is 1300 K
         T_num (float, optional) : Number of points in temperature array over which Gibbs free energies are calculated, default is 200.
        Returns:
@@ -31,7 +31,7 @@ def optimisationfunction_initial(D, Pstd=1.0, T_low=1300, T_num=200):
     GRT_vals = []; GRT_keys = []
     for i in range(len(GRT_list)):
         if i == 1 or i == 3 or i == 4 or i == 6:
-            GRT_T = GRT_list[i][np.argmin(np.abs(T_array - D["T_eq"]))] # For reactions 2, 4, 5, 7 use Gibbs free energy at higher temperature (T_eq) for optimisationfunction
+            GRT_T = GRT_list[i][np.argmin(np.abs(T_array - D["T_eq"]))] # For reactions 2, 4, 5, 7 (partitioning reactions between melt/metal) use T_eq
         else:
             GRT_T = GRT_list[i][np.argmin(np.abs(T_array - D["T_surface"]))] # Otherwise just find Gibbs free energy at closest T to surface temperature
         GRT_vals.append(GRT_T)

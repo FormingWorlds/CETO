@@ -12,29 +12,31 @@ from utilities import *
 sourcedir = Path(__file__).parent
 path_to_config = sourcedir / 'defaultconfig.txt'
 D = readconfig(path_to_config)
+D2 = readconfig(path_to_config)
 
-Fs, Gs = optimisationfunction_initial(D)
+D2["bool_nonideal_mixing"] = False
 
-testsdir = Path(__file__).parent.parent / 'tests'
-path_to_test = testsdir / 'testvalues_optimisation.txt'
-Fs_expected = np.genfromtxt(path_to_test)
+activitylist = ["lngSi", "lngO", "lngH2", "lngH2O_melt", "lngH_metal", "xB"]
+activity_nonideal = get_activity(D, get_all=True)
+activity_nonideal_notall = get_activity(D, get_all=False)
+activity_ideal = get_activity(D2)
 
-faults = []
-print("="*53)
-print("|{:^25}|{:^25}|".format('Test','Expected'))
-print("-"*53)
-for i in range(len(Fs)):
-    if Fs[i] != 0 and Fs_expected[i] !=0:
-        if np.abs((Fs[i]-Fs_expected[i])/Fs_expected[i]) >= 0.00001:
-            print("|{:^25}|{:^25}|*".format(Fs[i],Fs_expected[i]))
-            faults.append(i+1)
-        else:
-            print("|{:^25}|{:^25}|".format(Fs[i],Fs_expected[i]))
-    else:
-        print("|{:^25}|{:^25}|".format(Fs[i],Fs_expected[i]))
+print("Activities for only ideal mixing:")
+for i in range(len(activity_ideal)):
+    print(f"{activitylist[i]} = {activity_ideal[i]}")
 
-print('-'*53)
+print("Activities for non-ideal mixing, not all equations:")
+for i in range(len(activity_ideal)):
+    print(f"{activitylist[i]} = {activity_nonideal_notall[i]}")
 
-print(f"Test does not pass on:")
-for i in range(len(faults)):
-    print(f"F{faults[i]}")
+print("Activities for non-ideal mixing, all equations:")
+for i in range(len(activity_ideal)):
+    print(f"{activitylist[i]} = {activity_nonideal[i]}")
+
+
+
+
+
+
+
+
