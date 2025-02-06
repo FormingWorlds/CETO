@@ -2,6 +2,12 @@
 venv
 requirements.txt
 
+# Vscode
+.vscode/settings.json
+
+#Pytest
+.pytest_cache
+
 # Results directory
 results/run1
 results/

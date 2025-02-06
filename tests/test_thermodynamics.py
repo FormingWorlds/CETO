@@ -1,8 +1,8 @@
 import numpy as np
 import numpy.testing as npt
 import pytest
-from source.constants import (log_to_ln, R_gas)
-from source.thermodynamics import get_Gibbs, calculate_GRT
+from source.thermodynamics import calculate_GRT
+
 
 ## Define some test cases via pytest parametrisation
 @pytest.mark.parametrize(
