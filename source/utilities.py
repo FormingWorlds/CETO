@@ -95,12 +95,12 @@ def moles_in_system(el, D):
             if (el+'2') not in key and (el+'3') not in key and (el+'4') not in key:
                 el_ingas += D[key]
             else:
-                for j in range(2,5):
+                for coeff in range(2,5):
                     if (el+str(coeff)) in key:
                         el_ingas += coeff*D[key]
                     else:
                         pass
-            
+
     return D["moles_melt"]*el_inmelt + D["moles_metal"]*el_inmetal + D["moles_atm"]*el_ingas
 
 def gpm_phases(D):

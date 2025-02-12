@@ -1773,7 +1773,6 @@ def func(var):
     f17=fm[17]*wsolub*( ln(var[9])-ln(var[16])+GRT17_T-ln(P/Pstd) )
     f18=fm[18]*wsolub*( ln(var[10])-ln(var[17])+GRT18_T-ln(P/Pstd) )
     f19=fm[19]*watm*( ln(var[25])+0.5*ln(var[19])-ln(var[23])-2.0*ln(var[15])+GRT19_T+ln(P/Pstd)+0.5*ln(P/Pstd)-ln(P/Pstd)-2.0*ln(P/Pstd) )# SiO+2H2=SiH4+1/2O2
-    
     # Add a 2-sided sigmoidal penalty function outside of 0 +/- toler using the logistic function
     val=0.0 #expected values for f's are zero
     sharp=5.0 #sharpness of sigmoidal edges, sharpness of the walls of the well
