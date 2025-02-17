@@ -54,8 +54,8 @@ def readconfig(path):
             "wt_f22", "wt_f23", "wt_f24", "wt_f25", "wt_f26", "wt_f27", "wt_f28", "wt_f29", "seed", "niters",
             "offset_MCMC", "bool_unreactive_metal", "bool_nonideal_mixing"]
     
-    D = dict(zip(datakeys, data))
-    return D
+    config = dict(zip(datakeys, data))
+    return config
 
 def moles_in_system(el, D):
     """Computes the number of moles of a certain element present within the system based on input data.
@@ -130,11 +130,13 @@ def gpm_phases(D):
             pass
     return gpm_gas, gpm_melt, gpm_metal
 
-def calculate_pressure(D):
+def calculate_pressure(D, config):
     """Calculates pressure according to equation 8 from Schlichting & Young (2022).
     Parameters:
-    D (dict)                : Dictionary containing model input, retrieves planet initial mass and moles in
-                            each phase to calculate initial surface pressure in bar
+    D (dict)                : Dictionary of model variables, retrieves moles in
+                            each phase to calculate surface pressure in bar
+    config (dict)           : Dictionary of global model input, unchanged from 
+                            model initialisation, retrieves planet mass
     Returns:
     P (float)               : Surface pressure in bar"""
     
@@ -145,26 +147,22 @@ def calculate_pressure(D):
     molefrac_melt = D["moles_melt"] / moles_total
     molefrac_metal = D["moles_metal"] / moles_total
 
-    grams_atm = molefrac_atm * gpm_gas
-    grams_melt = molefrac_melt * gpm_melt
-    grams_metal = molefrac_metal * gpm_metal
+    totalmass = molefrac_atm*gpm_gas + molefrac_melt*gpm_melt + molefrac_metal*gpm_metal
 
-    totalmass = grams_atm + grams_melt + grams_metal
-
-    massfrac_atm = grams_atm / totalmass
+    massfrac_atm = molefrac_atm*gpm_gas / totalmass
 
     fratio = massfrac_atm/(1.0-massfrac_atm)
-    P = 1.2e6*fratio*(D["M_p"])**(2/3) # surface pressure in bar
+    P = 1.2e6*fratio*(config["M_p"])**(2/3) # surface pressure in bar
     return P
 
 
-def get_bounds(D):
+def get_bounds(config):
     """Creates 2d array containing upper and lower bounds for each element in optimisation function based
        on model input. Conditions are imposed on species mole fractions (elements 0-25), moles of phases 
        (elements 26, 27, 28) and the pressure (element 29). Boundary conditions are adapted from original
        version of code by Edward Young.
        Parameters:
-       D (dict)                 : dictionary containing model input, used to scale boundary condition for
+       config (dict)            : dictionary containing global model input, used to scale boundary condition for
                                 elements 27, 27 and 28.
        Returns:
        bounds (np.2darray)      : boundary conditions (low, high) for each of the 30 elements of the model's
@@ -179,18 +177,18 @@ def get_bounds(D):
             bounds[i, 1] = 0.4
         elif i == 21 or i == 22 or i == 23:
             bounds[i, 0] = 1.0e-15
-            bounds[i, 1] = 0.99999
+            bounds[i, 1] = 1.0
         else:
             bounds[i, 0] = 1.0e-20
-            bounds[i, 1] = 0.99999
+            bounds[i, 1] = 0.9999
 
     ## Boundaries on total # moles per phase
-    bounds[26, 0] = D["moles_atm"]*1.0e-20 
-    bounds[26, 1] = D["moles_atm"]*50.0
-    bounds[27, 0] = D["moles_melt"]*0.5
-    bounds[27, 1] = D["moles_melt"]*2.0
-    bounds[28, 0] = D["moles_metal"]*0.5
-    bounds[28, 1] = D["moles_metal"]*2.0
+    bounds[26, 0] = config["moles_atm"]*1.0e-20 
+    bounds[26, 1] = config["moles_atm"]*50.0
+    bounds[27, 0] = config["moles_melt"]*0.5
+    bounds[27, 1] = config["moles_melt"]*2.0
+    bounds[28, 0] = config["moles_metal"]*0.5
+    bounds[28, 1] = config["moles_metal"]*2.0
 
     ## Boundaries on pressure
     bounds[29, 0] = 1.0e-3
@@ -225,13 +223,27 @@ def smoothTriangle(data, degree):
        smoothed (array)         : array of 'smoothed' values."""
     triangle = np.concatenate((np.arange(degree+1), np.arange(degree)[::-1]))
     smoothed = []
-    for i in range(degree, (len(data)-2*degree)):
+    for i in range(degree, len(data)-degree*2):
         point = data[i:i+len(triangle)]*triangle
         smoothed.append(np.sum(point)/np.sum(triangle))
+    # Handle Boundaries
     smoothed = [smoothed[0]]*int(degree + degree/2) + smoothed
     while len(smoothed) < len(data):
         smoothed.append(smoothed[-1])
     return smoothed
+
+def smoothTriangle2(data, degree ):
+    triangle=np.concatenate((np.arange(degree + 1), np.arange(degree)[::-1])) # up then down
+    smoothed=[]
+    for i in range(degree, len(data) - degree * 2):
+        point=data[i:i + len(triangle)] * triangle
+        smoothed.append(np.sum(point)/np.sum(triangle))
+    # Handle boundaries
+    smoothed=[smoothed[0]]*int(degree + degree/2) + smoothed
+    while len(smoothed) < len(data):
+        smoothed.append(smoothed[-1])
+    return smoothed
+
 
 
 

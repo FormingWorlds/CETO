@@ -37,7 +37,10 @@ print(" ")
 #print("    NON-IDEAL H2O IN SILICATE (REGULAR SOLN)")
 print("--------------------------------------------------")
 print("Read above! ")
-time.sleep(5.0)
+
+time1 = time.time()
+
+np.random.seed(42)
 
 # Supress warnings
 #warnings.simplefilter('ignore', RuntimeWarning)
@@ -2002,14 +2005,14 @@ print('Std deviation of smoothed Objective function at start =',sigma_cost)
 T_estimate=-sigma_cost/ln(0.98)
 print('Estimated initial search T =',T_estimate)
 
-plt.plot(cost_estimates,label='Random',linewidth=0.5)
-plt.plot(cost_smoothed,label='Smoothed')
-plt.ylabel('Objective func', fontsize=12)
-plt.xlabel('Random draw',fontsize=12)
-plt.legend()
-plt.show(block=False)  #Permit execution to continue with plot open
-plt.pause(7) #Pause x seconds before moving on
-plt.close()
+# plt.plot(cost_estimates,label='Random',linewidth=0.5)
+# plt.plot(cost_smoothed,label='Smoothed')
+# plt.ylabel('Objective func', fontsize=12)
+# plt.xlabel('Random draw',fontsize=12)
+# plt.legend()
+# plt.show(block=False)  #Permit execution to continue with plot open
+# plt.pause(7) #Pause x seconds before moving on
+# plt.close()
 
 Tini=T_estimate
 #Tini=100.0
@@ -2032,7 +2035,7 @@ nseed=nseed_prov
 if nseed_prov == 0:
     nseed=randint(1,500)
 print('Seed for search =',nseed)
-soln=dual_annealing(func,bounds,maxiter=iter,initial_temp=Tini,visit=2.98,maxfun=100000000, seed=nseed,\
+soln=dual_annealing(func,bounds,maxiter=iter,initial_temp=Tini,visit=2.98,maxfun=100000000, seed=42,\
     accept=-500.0,restart_temp_ratio=1.0e-9,callback=progressF)
 print('')
 print("solution for parameters x =",soln)
@@ -2040,6 +2043,8 @@ print("solution for parameters x =",soln)
 
 quality=soln.fun/mean_cost
 print(" Objective function end/start =",quality)
+
+time2 = time.time()
 
 #Plot cost function at minima found during simulated annealing...
 name='progress.txt'
