@@ -14,6 +14,7 @@ import os
 import emcee
 import corner
 import math
+from copy import deepcopy
 import warnings
 from multiprocessing.pool import Pool
 from multiprocessing import get_start_method
@@ -189,6 +190,8 @@ print('')
 print('Input mole fractions and moles:')
 for i in range (0,numvar):
     print(var_names[i],'=', var[i])
+
+var_initial = deepcopy(var)
     
 #Initial compositions in mass:
 #
@@ -1970,7 +1973,7 @@ print('Initial objective function =',cost)
 print('Initial gamma H metal = ',lngHmetal)
 
 #Estimate the mean cost function by sampling values
-num_test=500
+num_test=50
 cost_estimates=np.zeros(num_test)
 var_random=np.zeros(numvar)
 for k in range(0,num_test):
@@ -2259,6 +2262,13 @@ def model(theta):
     y_model[29]=100.0*(P_guess-theta[29])/P_guess #Added a multiplier here to force better pressure solutions
     
     return y_model
+
+
+## Added for troubleshooting and testing by Jorick
+model_test = model(var_initial)
+print("printing var to test: \n", var_initial)
+np.savetxt('modeltest.txt', model_test)
+
 #--------------------------------------------------------------------------------------------------------
 # DEFINE LIKELIHOOD FUNCTION, making use of model function above.
 # Notice by using the sum, this is the logarithm of the likelihood probability.

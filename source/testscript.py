@@ -57,9 +57,7 @@ variables_initial = [config[key] for key in variable_keys]
 F_ini = objectivefunction_initial(variables_initial, variable_keys, config, moles_initial, G)
 
 
-## Estimate mean const by sampling optimisationfunction over random variables
-
-
+## Calculate objective function first value
 P_estimate = calculate_pressure(config, config)
 variables = deepcopy(variables_initial)
 variables[-1] = P_estimate
@@ -68,37 +66,42 @@ w_gas = 1.0/np.max(np.abs(F_ini[:19])) # Weight for thermodynamic equations
                                        # from maximum objective function from the 19 reaction values
 
 Value = objectivefunction(variables, variable_keys, config, moles_initial, G, w_gas)
-bounds = get_bounds(config)
 
-n_iters = 500
-costs = np.zeros(n_iters)
-random_variables = np.zeros(len(variables))
-for i in range(n_iters):
-    for j in range(len(variables)):
-        random_variables[j] = np.random.uniform(bounds[j,0], bounds[j,1])
-    costs[i] = objectivefunction(random_variables, variable_keys, config, moles_initial, G, w_gas)
+theta = deepcopy(variables)
+y_model = model(theta, variable_keys, config, moles_initial, G)
+for i in range(len(y_model)):
+    print(y_model[i])
+## Sample objective function over 500 random sets of variables to estimate mean cost of function
+# bounds = get_bounds(config)
+# n_iters = 500
+# costs = np.zeros(n_iters)
+# random_variables = np.zeros(len(variables))
+# for i in range(n_iters):
+#     for j in range(len(variables)):
+#         random_variables[j] = np.random.uniform(bounds[j,0], bounds[j,1])
+#     costs[i] = objectivefunction(random_variables, variable_keys, config, moles_initial, G, w_gas)
 
-cost_smoothed = smoothTriangle(costs, 5)
-mean_cost = np.mean(cost_smoothed)
-std_cost = np.std(cost_smoothed)
+# cost_smoothed = smoothTriangle(costs, 5)
+# mean_cost = np.mean(cost_smoothed)
+# std_cost = np.std(cost_smoothed)
 
-print(f"mean cost: {mean_cost}")
-print(f"std cost: {std_cost}")
+# print(f"mean cost: {mean_cost}")
+# print(f"std cost: {std_cost}")
 
-T_estimate = -std_cost / ln(0.98)
-print(f"Estimated initial search T: {T_estimate}")
+# ## Invoke Simulated Annealing
+#     ## NOTE: the use of 'seed' in dual_annealing is legacy behaviour and will cease to work at some point
+#     ## in the future. keyword 'rng' takes over the functionality, so investigate using it instead soon.
 
-## Invoke Simulated Annealing
-## NOTE: the use of 'seed' in dual_annealing is legacy behaviour and will cease to work at some point
-## in the future. keyword 'rng' takes over the functionality, so investigate using it instead soon.
+# T_estimate = -std_cost / ln(0.98)
+# print(f"Estimated initial search T: {T_estimate}")
 
-sol = dual_annealing(objectivefunction,bounds,maxiter=config["niters"],args=(variable_keys, config, moles_initial, G, w_gas), 
-                     initial_temp=T_estimate, visit=2.98, maxfun=1e8, seed=user_seed, 
-                     accept=-500.0, restart_temp_ratio=1.0e-9)
+# sol = dual_annealing(objectivefunction,bounds,maxiter=config["niters"],args=(variable_keys, config, moles_initial, G, w_gas), 
+#                      initial_temp=T_estimate, visit=2.98, maxfun=1e8, seed=user_seed, 
+#                      accept=-500.0, restart_temp_ratio=1.0e-9)
 
-quality = sol.fun / mean_cost
-print(sol)
-print("Quality: ", quality)
+# quality = sol.fun / mean_cost
+# print(sol)
+# print("Quality: ", quality)
 
 endtime = time.time()
 print(f"Script concluded in {endtime-starttime} s")

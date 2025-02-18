@@ -153,3 +153,24 @@ def objectivefunction(var, varkeys, config, initial_moles, G, w_gas, Pstd=1.0):
     ## Sum of squared errors in F
     sum = np.sum((F**2))
     return sum
+
+def model(theta, thetakeys, config, initial_moles, G, Pstd=1.0):
+    T = dict(zip(thetakeys, theta))
+
+    F = objectivefunction_initial(theta, thetakeys, config, initial_moles, G, Pstd=Pstd)
+    y_model = np.zeros(len(theta))
+    for i in range(19):
+        if i == 14:
+            y_model[i] = F[i] - list(G.values())[i] + ln(1e4 / Pstd) #Model term without thermodynamics or pressure correction
+        else:
+            y_model[i] = F[i] - list(G.values())[i]                  #Model term without thermodynamics
+
+    for j in range(19, 26):
+        y_model[j] = -F[j] + list(initial_moles.values())[(j-19)]
+
+    for k in range(26, 29):
+        y_model[k] = -F[k] + 1.0
+
+    y_model[-1] = (calculate_pressure(T, config))*100
+
+    return y_model
