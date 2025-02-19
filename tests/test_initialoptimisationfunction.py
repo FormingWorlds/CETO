@@ -4,6 +4,7 @@ from source.utilities import *
 from source.thermodynamics import calculate_GRT
 from source.model import objectivefunction_initial
 
+
 ## Reading model input from config file
 projectdir = Path(__file__).parent
 path_to_config = projectdir / 'defaultconfig.txt'
@@ -14,6 +15,9 @@ variable_keys = ["MgO_melt", "SiO2_melt", "MgSiO3_melt", "FeO_melt", "FeSiO3_mel
             "H2_gas", "CO_gas", "CO2_gas", "CH4_gas", "O2_gas", "H2O_gas", "Fe_gas", "Mg_gas", "SiO_gas", 
             "Na_gas", "SiH4_gas", "moles_atm", "moles_melt", "moles_metal", "P_penalty"]
 var_initial = [config[key] for key in variable_keys]
+
+P_initial = calculate_pressure(config, config)
+var_initial[-1] = P_initial
 
 nSi = moles_in_system('Si', config)
 nMg = moles_in_system('Mg', config)
@@ -45,10 +49,18 @@ G = dict(zip(GRT_keys, GRT_vals))
 
 ## Read array of computed values from Young model as test
 path_to_expected = projectdir / 'testvalues_initialoptimisation.txt'
+expected_result = np.genfromtxt(path_to_expected)
+## Due to inconsistencies in Young's model, we need to re-order entries 26, 27, 28 (summing of moles in phases) to gas/melt/metal
+a = expected_result[26]
+b = expected_result[27]
+c = expected_result[28]
+
+expected_result[26] = c
+expected_result[27] = a
+expected_result[28] = b
 
 def test_objectivefunction():
     test_input = objectivefunction_initial(var_initial, variable_keys, config, moles_initial, G)
-    expected_result = np.genfromtxt(path_to_expected)
     npt.assert_array_almost_equal(test_input, expected_result, decimal=6)
 
 

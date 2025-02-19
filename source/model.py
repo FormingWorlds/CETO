@@ -30,7 +30,8 @@ def objectivefunction_initial(var, varkeys, config, initial_moles, G, Pstd=1.0):
     D = dict(zip(varkeys, var))
 
     ## Surface pressure
-    P = calculate_pressure(D, config)
+    P = D["P_penalty"]
+    #P = calculate_pressure(D, config)
     
     ## Get activities for Si, O, H2, H2O in melt phase, H in metal phase.
     lngSi, lngO, lngH2, lngH2O_melt, lngH_metal, xB = get_activity(D, config)
@@ -70,7 +71,7 @@ def objectivefunction_initial(var, varkeys, config, initial_moles, G, Pstd=1.0):
     f19 = ln(D["SiH4_gas"]) + 0.5*ln(D["O2_gas"]) - ln(D["SiO_gas"]) - 2*ln(D["H2_gas"]) + \
         G["R19"] - 1.5*ln(P/Pstd)
     
-    ## Mass balance for elements H, C, O, Na, Mg, Si, Fe, must be zero initially
+    ## Mass balance for elements Si, Mg, O, Fe, H, Na, C, must be zero initially
     f20 = initial_moles["Si"] - moles_in_system('Si', config)
     f21 = initial_moles["Mg"] - moles_in_system('Mg', config)
     f22 = initial_moles["O"] - moles_in_system('O', config)
@@ -80,9 +81,9 @@ def objectivefunction_initial(var, varkeys, config, initial_moles, G, Pstd=1.0):
     f26 = initial_moles["C"] - moles_in_system('C', config)
 
     ## Summing constraint on mole fractions for gas, melt and metal phases
-    f27 = 1 - np.sum([D[key] for key in D if "_melt" in key and "moles" not in key and "wt" not in key])
-    f28 = 1 - np.sum([D[key] for key in D if "_metal" in key and "moles" not in key and "wt" not in key and "bool" not in key])
-    f29 = 1 - np.sum([D[key] for key in D if "_gas" in key and "moles" not in key and "wt" not in key])
+    f27 = 1 - np.sum([D[key] for key in D if "_gas" in key and "moles" not in key and "wt" not in key])
+    f28 = 1 - np.sum([D[key] for key in D if "_melt" in key and "moles" not in key and "wt" not in key])
+    f29 = 1 - np.sum([D[key] for key in D if "_metal" in key and "moles" not in key and "wt" not in key and "bool" not in key])
 
     F_initial = np.array([f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, 
              f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29])
@@ -135,7 +136,7 @@ def objectivefunction(var, varkeys, config, initial_moles, G, w_gas, Pstd=1.0):
             f_i = wt_evap*config[f"wt_f{i}"]*f_i_ini
         elif i in (15, 16, 17, 18):                                 # F15 - F18 are solubility reactions
             f_i = wt_solub*config[f"wt_f{i}"]*f_i_ini
-        elif i in (20, 21, 22, 23, 24, 25, 26):                     # Mass Balance Equations
+        elif i in (20, 21, 22, 23, 24, 25, 26):                     # Mass Balance Equations Si, Mg, O, Fe, H, Na, C
             f_i = wt_massbalance*config[f"wt_f{i}"]*(wtm/nElements[int(i-20)]) * f_i_ini
         elif i in (27, 28, 29):                                     # Summing constraints on phases
             f_i = wt_summing*config[f"wt_f{i}"] * f_i_ini
@@ -171,6 +172,7 @@ def model(theta, thetakeys, config, initial_moles, G, Pstd=1.0):
     for k in range(26, 29):
         y_model[k] = -F[k] + 1.0
 
-    y_model[-1] = (calculate_pressure(T, config))*100
+    P_guess = (calculate_pressure(T, config))
+    y_model[-1] = 100*(P_guess - theta[-1])/P_guess
 
     return y_model

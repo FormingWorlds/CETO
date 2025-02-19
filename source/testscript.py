@@ -30,7 +30,7 @@ print(f"Seeding random generator with seed={user_seed}")
 np.random.seed(user_seed)                  #re-seed generator with user_seed
 
 ## Compute initial moles in system
-elements_keys = ['Si', 'Mg', 'Na', 'Fe', 'C', 'H', 'O']
+elements_keys = ['Si', 'Mg', 'O', 'Fe', 'H', 'Na', 'C']
 elements_values = [moles_in_system(element, config) for element in elements_keys]
 moles_initial = dict(zip(elements_keys, elements_values))
 
@@ -67,7 +67,7 @@ w_gas = 1.0/np.max(np.abs(F_ini[:19])) # Weight for thermodynamic equations
 
 Value = objectivefunction(variables, variable_keys, config, moles_initial, G, w_gas)
 
-theta = deepcopy(variables)
+theta = deepcopy(variables_initial)
 y_model = model(theta, variable_keys, config, moles_initial, G)
 for i in range(len(y_model)):
     print(y_model[i])
