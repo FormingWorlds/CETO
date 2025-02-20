@@ -220,7 +220,8 @@ mol_wts[19]=31.9988
 mol_wts[20]=18.01528
 mol_wts[21]=55.847
 mol_wts[22]=24.305
-mol_wts[23]=60.08
+#mol_wts[23]=60.08 #Corresponds to SiO in gpm calculations; but gpm of SiO is NOT 60.08; rather it is 44.08
+mol_wts[23] = 44.08
 mol_wts[24]=22.98977
 mol_wts[25]=32.12
 
@@ -283,6 +284,7 @@ moles_silicate=var[27]
 print('  Moles silicate = ',moles_silicate)
 moles_metal=var[28]
 print('  Moles metal =',moles_metal)
+print('  Moles Total =', (moles_atm+moles_silicate+moles_metal))
 molefrac_atm=moles_atm/(moles_atm+moles_silicate+moles_metal)
 molefrac_silicate=moles_silicate/(moles_atm+moles_silicate+moles_metal)
 molefrac_metal=1.0-molefrac_atm-molefrac_silicate
@@ -294,16 +296,21 @@ print(' ')
 grams_atm=molefrac_atm*grams_per_mole_atm  #actually grams_i/mole planet
 grams_silicate=molefrac_silicate*grams_per_mole_silicate
 grams_metal=molefrac_metal*grams_per_mole_metal
+print('  Grams atmosphere =', grams_atm)
+print('  Grams silicate =', grams_silicate)
+print('  Grams metal =', grams_metal)
 totalmass=grams_atm+grams_silicate+grams_metal
 massfrac_atm=grams_atm/totalmass
 massfrac_silicate=grams_silicate/totalmass
 massfrac_metal=grams_metal/totalmass
+print('  Total Mass =', totalmass)
 print('  Mass fraction atmosphere =',massfrac_atm)
 print('  Mass fraction silicate =',massfrac_silicate)
 print('  Mass fraction metal =',massfrac_metal)
 
 #Estimate atmospheric pressure at the surface of the planet: fratio is the Matm/Mplanet mass ratio
 fratio=massfrac_atm/(1.0-massfrac_atm)
+print('  fratio : ', fratio)
 P_initial=1.2e6*fratio*(Mplanet_Mearth)**(2.0/3.0)
 Pressure_GPa=P_initial*0.0001
 print('')
@@ -318,7 +325,7 @@ var[numvar-1]=P_initial
 #THERMODYNAMICS OF MELT REACTIONS
 #
 log_to_ln = 2.302585093
-Rgas=8.314462618153
+Rgas=8.31446261815324
 TKlength=len(TK)
 
 #MgO melt
@@ -1215,199 +1222,199 @@ for i in range(0,TKlength):
 
 #--------------------------------------------------------------------------------------------------------
 #PRINT RESULTING G/(RT) TERMS TO FILES:
-#
-a_file = open('G1_RT.txt', 'w')
-a_file.write("T(K)      ")
-a_file.write("")
-a_file.write("  G1/(RT)\n")
-for i in range(0,num):
-    a_file.write("%10.5e " % TK[i])
-    a_file.write("")
-    a_file.write("%13.8e\n" % GRT1[i])
-a_file.close()
+# Commented out by Jorick for testing
+# a_file = open('G1_RT.txt', 'w')
+# a_file.write("T(K)      ")
+# a_file.write("")
+# a_file.write("  G1/(RT)\n")
+# for i in range(0,num):
+#     a_file.write("%10.5e " % TK[i])
+#     a_file.write("")
+#     a_file.write("%13.8e\n" % GRT1[i])
+# a_file.close()
 
-a_file = open('G2_RT.txt', 'w')
-a_file.write("T(K)      ")
-a_file.write("")
-a_file.write("  G2/(RT)\n")
-for i in range(0,num):
-    a_file.write("%10.5e " % TK[i])
-    a_file.write("")
-    a_file.write("%13.8e\n" % GRT2[i])
-a_file.close()
+# a_file = open('G2_RT.txt', 'w')
+# a_file.write("T(K)      ")
+# a_file.write("")
+# a_file.write("  G2/(RT)\n")
+# for i in range(0,num):
+#     a_file.write("%10.5e " % TK[i])
+#     a_file.write("")
+#     a_file.write("%13.8e\n" % GRT2[i])
+# a_file.close()
 
-a_file = open('G3_RT.txt', 'w')
-a_file.write("T(K)      ")
-a_file.write("")
-a_file.write("  G3/(RT)\n")
-for i in range(0,num):
-    a_file.write("%10.5e " % TK[i])
-    a_file.write("")
-    a_file.write("%13.8e\n" % GRT3[i])
-a_file.close()
+# a_file = open('G3_RT.txt', 'w')
+# a_file.write("T(K)      ")
+# a_file.write("")
+# a_file.write("  G3/(RT)\n")
+# for i in range(0,num):
+#     a_file.write("%10.5e " % TK[i])
+#     a_file.write("")
+#     a_file.write("%13.8e\n" % GRT3[i])
+# a_file.close()
 
-a_file = open('G4_RT.txt', 'w')
-a_file.write("T(K)      ")
-a_file.write("")
-a_file.write("  G4/(RT)\n")
-for i in range(0,num):
-    a_file.write("%10.5e " % TK[i])
-    a_file.write("")
-    a_file.write("%13.8e\n" % GRT4[i])
-a_file.close()
+# a_file = open('G4_RT.txt', 'w')
+# a_file.write("T(K)      ")
+# a_file.write("")
+# a_file.write("  G4/(RT)\n")
+# for i in range(0,num):
+#     a_file.write("%10.5e " % TK[i])
+#     a_file.write("")
+#     a_file.write("%13.8e\n" % GRT4[i])
+# a_file.close()
 
-a_file = open('G5_RT.txt', 'w')
-a_file.write("T(K)      ")
-a_file.write("")
-a_file.write("  G5/(RT)\n")
-for i in range(0,num):
-    a_file.write("%10.5e " % TK[i])
-    a_file.write("")
-    a_file.write("%13.8e\n" % GRT5[i])
-a_file.close()
+# a_file = open('G5_RT.txt', 'w')
+# a_file.write("T(K)      ")
+# a_file.write("")
+# a_file.write("  G5/(RT)\n")
+# for i in range(0,num):
+#     a_file.write("%10.5e " % TK[i])
+#     a_file.write("")
+#     a_file.write("%13.8e\n" % GRT5[i])
+# a_file.close()
 
-a_file = open('G6_RT.txt', 'w')
-a_file.write("T(K)      ")
-a_file.write("")
-a_file.write("  G6/(RT)\n")
-for i in range(0,num):
-    a_file.write("%10.5e " % TK[i])
-    a_file.write("")
-    a_file.write("%13.8e\n" % GRT6[i])
-a_file.close()
+# a_file = open('G6_RT.txt', 'w')
+# a_file.write("T(K)      ")
+# a_file.write("")
+# a_file.write("  G6/(RT)\n")
+# for i in range(0,num):
+#     a_file.write("%10.5e " % TK[i])
+#     a_file.write("")
+#     a_file.write("%13.8e\n" % GRT6[i])
+# a_file.close()
 
-a_file = open('G7_RT.txt', 'w')
-a_file.write("T(K)      ")
-a_file.write("")
-a_file.write("  G7/(RT)\n")
-for i in range(0,num):
-    a_file.write("%10.5e " % TK[i])
-    a_file.write("")
-    a_file.write("%13.8e\n" % GRT7[i])
-a_file.close()
+# a_file = open('G7_RT.txt', 'w')
+# a_file.write("T(K)      ")
+# a_file.write("")
+# a_file.write("  G7/(RT)\n")
+# for i in range(0,num):
+#     a_file.write("%10.5e " % TK[i])
+#     a_file.write("")
+#     a_file.write("%13.8e\n" % GRT7[i])
+# a_file.close()
 
-a_file = open('G8_RT.txt', 'w')
-a_file.write("T(K)      ")
-a_file.write("")
-a_file.write("  G8/(RT)\n")
-for i in range(0,num):
-    a_file.write("%10.5e " % TK[i])
-    a_file.write("")
-    a_file.write("%13.8e\n" % GRT8[i])
-a_file.close()
+# a_file = open('G8_RT.txt', 'w')
+# a_file.write("T(K)      ")
+# a_file.write("")
+# a_file.write("  G8/(RT)\n")
+# for i in range(0,num):
+#     a_file.write("%10.5e " % TK[i])
+#     a_file.write("")
+#     a_file.write("%13.8e\n" % GRT8[i])
+# a_file.close()
 
-a_file = open('G9_RT.txt', 'w')
-a_file.write("T(K)      ")
-a_file.write("")
-a_file.write("  G9/(RT)\n")
-for i in range(0,num):
-    a_file.write("%10.5e " % TK[i])
-    a_file.write("")
-    a_file.write("%13.8e\n" % GRT9[i])
-a_file.close()
+# a_file = open('G9_RT.txt', 'w')
+# a_file.write("T(K)      ")
+# a_file.write("")
+# a_file.write("  G9/(RT)\n")
+# for i in range(0,num):
+#     a_file.write("%10.5e " % TK[i])
+#     a_file.write("")
+#     a_file.write("%13.8e\n" % GRT9[i])
+# a_file.close()
 
-a_file = open('G10_RT.txt', 'w')
-a_file.write("T(K)      ")
-a_file.write("")
-a_file.write("  G10/(RT)\n")
-for i in range(0,num):
-    a_file.write("%10.5e " % TK[i])
-    a_file.write("")
-    a_file.write("%13.8e\n" % GRT10[i])
-a_file.close()
+# a_file = open('G10_RT.txt', 'w')
+# a_file.write("T(K)      ")
+# a_file.write("")
+# a_file.write("  G10/(RT)\n")
+# for i in range(0,num):
+#     a_file.write("%10.5e " % TK[i])
+#     a_file.write("")
+#     a_file.write("%13.8e\n" % GRT10[i])
+# a_file.close()
 
-a_file = open('G11_RT.txt', 'w')
-a_file.write("T(K)      ")
-a_file.write("")
-a_file.write("  G11/(RT)\n")
-for i in range(0,num):
-    a_file.write("%10.5e " % TK[i])
-    a_file.write("")
-    a_file.write("%13.8e\n" % GRT11[i])
-a_file.close()
+# a_file = open('G11_RT.txt', 'w')
+# a_file.write("T(K)      ")
+# a_file.write("")
+# a_file.write("  G11/(RT)\n")
+# for i in range(0,num):
+#     a_file.write("%10.5e " % TK[i])
+#     a_file.write("")
+#     a_file.write("%13.8e\n" % GRT11[i])
+# a_file.close()
 
-a_file = open('G12_RT.txt', 'w')
-a_file.write("T(K)      ")
-a_file.write("")
-a_file.write("  G12/(RT)\n")
-for i in range(0,num):
-    a_file.write("%10.5e " % TK[i])
-    a_file.write("")
-    a_file.write("%13.8e\n" % GRT12[i])
-a_file.close()
+# a_file = open('G12_RT.txt', 'w')
+# a_file.write("T(K)      ")
+# a_file.write("")
+# a_file.write("  G12/(RT)\n")
+# for i in range(0,num):
+#     a_file.write("%10.5e " % TK[i])
+#     a_file.write("")
+#     a_file.write("%13.8e\n" % GRT12[i])
+# a_file.close()
 
-a_file = open('G13_RT.txt', 'w')
-a_file.write("T(K)      ")
-a_file.write("")
-a_file.write("  G13/(RT)\n")
-for i in range(0,num):
-    a_file.write("%10.5e " % TK[i])
-    a_file.write("")
-    a_file.write("%13.8e\n" % GRT13[i])
-a_file.close()
+# a_file = open('G13_RT.txt', 'w')
+# a_file.write("T(K)      ")
+# a_file.write("")
+# a_file.write("  G13/(RT)\n")
+# for i in range(0,num):
+#     a_file.write("%10.5e " % TK[i])
+#     a_file.write("")
+#     a_file.write("%13.8e\n" % GRT13[i])
+# a_file.close()
 
-a_file = open('G14_RT.txt', 'w')
-a_file.write("T(K)      ")
-a_file.write("")
-a_file.write("  G14/(RT)\n")
-for i in range(0,num):
-    a_file.write("%10.5e " % TK[i])
-    a_file.write("")
-    a_file.write("%13.8e\n" % GRT14[i])
-a_file.close()
+# a_file = open('G14_RT.txt', 'w')
+# a_file.write("T(K)      ")
+# a_file.write("")
+# a_file.write("  G14/(RT)\n")
+# for i in range(0,num):
+#     a_file.write("%10.5e " % TK[i])
+#     a_file.write("")
+#     a_file.write("%13.8e\n" % GRT14[i])
+# a_file.close()
 
-a_file = open('G15_RT.txt', 'w')
-a_file.write("T(K)      ")
-a_file.write("")
-a_file.write("  G15/(RT)\n")
-for i in range(0,num):
-    a_file.write("%10.5e " % TK[i])
-    a_file.write("")
-    a_file.write("%13.8e\n" % GRT15[i])
-a_file.close()
+# a_file = open('G15_RT.txt', 'w')
+# a_file.write("T(K)      ")
+# a_file.write("")
+# a_file.write("  G15/(RT)\n")
+# for i in range(0,num):
+#     a_file.write("%10.5e " % TK[i])
+#     a_file.write("")
+#     a_file.write("%13.8e\n" % GRT15[i])
+# a_file.close()
 
-a_file = open('G16_RT.txt', 'w')
-a_file.write("T(K)      ")
-a_file.write("")
-a_file.write("  G16/(RT)\n")
-for i in range(0,num):
-    a_file.write("%10.5e " % TK[i])
-    a_file.write("")
-    a_file.write("%13.8e\n" % GRT16[i])
-a_file.close()
+# a_file = open('G16_RT.txt', 'w')
+# a_file.write("T(K)      ")
+# a_file.write("")
+# a_file.write("  G16/(RT)\n")
+# for i in range(0,num):
+#     a_file.write("%10.5e " % TK[i])
+#     a_file.write("")
+#     a_file.write("%13.8e\n" % GRT16[i])
+# a_file.close()
 
-a_file = open('G17_RT.txt', 'w')
-a_file.write("T(K)      ")
-a_file.write("")
-a_file.write("  G17/(RT)\n")
-for i in range(0,num):
-    a_file.write("%10.5e " % TK[i])
-    a_file.write("")
-    a_file.write("%13.8e\n" % GRT17[i])
-a_file.close()
+# a_file = open('G17_RT.txt', 'w')
+# a_file.write("T(K)      ")
+# a_file.write("")
+# a_file.write("  G17/(RT)\n")
+# for i in range(0,num):
+#     a_file.write("%10.5e " % TK[i])
+#     a_file.write("")
+#     a_file.write("%13.8e\n" % GRT17[i])
+# a_file.close()
 
-a_file = open('G18_RT.txt', 'w')
-a_file.write("T(K)      ")
-a_file.write("")
-a_file.write("  G18/(RT)\n")
-for i in range(0,num):
-    a_file.write("%10.5e " % TK[i])
-    a_file.write("")
-    a_file.write("%13.8e\n" % GRT18[i])
-a_file.close()
+# a_file = open('G18_RT.txt', 'w')
+# a_file.write("T(K)      ")
+# a_file.write("")
+# a_file.write("  G18/(RT)\n")
+# for i in range(0,num):
+#     a_file.write("%10.5e " % TK[i])
+#     a_file.write("")
+#     a_file.write("%13.8e\n" % GRT18[i])
+# a_file.close()
 
-a_file = open('G19_RT.txt', 'w')
-a_file.write("T(K)      ")
-a_file.write("")
-a_file.write("  G19/(RT)\n")
-for i in range(0,num):
-    a_file.write("%10.5e " % TK[i])
-    a_file.write("")
-    a_file.write("%13.8e\n" % GRT19[i])
-a_file.close()
+# a_file = open('G19_RT.txt', 'w')
+# a_file.write("T(K)      ")
+# a_file.write("")
+# a_file.write("  G19/(RT)\n")
+# for i in range(0,num):
+#     a_file.write("%10.5e " % TK[i])
+#     a_file.write("")
+#     a_file.write("%13.8e\n" % GRT19[i])
+# a_file.close()
 
-print('')
-print('Thermodynamic data in Gi_RT.txt files')
+# print('')
+# print('Thermodynamic data in Gi_RT.txt files')
 
 # SHOW PLOTS OF LOGK_EQ VS TEMPERATURE FOR REACTIONS
 ##plt.show()
@@ -1779,6 +1786,10 @@ def func(var):
     f17=fm[17]*wsolub*( ln(var[9])-ln(var[16])+GRT17_T-ln(P/Pstd) )
     f18=fm[18]*wsolub*( ln(var[10])-ln(var[17])+GRT18_T-ln(P/Pstd) )
     f19=fm[19]*watm*( ln(var[25])+0.5*ln(var[19])-ln(var[23])-2.0*ln(var[15])+GRT19_T+ln(P/Pstd)+0.5*ln(P/Pstd)-ln(P/Pstd)-2.0*ln(P/Pstd) )# SiO+2H2=SiH4+1/2O2
+
+    ## ADDED FOR TESTING
+    f_reactions_unpen = np.array([f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19])
+
     # Add a 2-sided sigmoidal penalty function outside of 0 +/- toler using the logistic function
     val=0.0 #expected values for f's are zero
     sharp=5.0 #sharpness of sigmoidal edges, sharpness of the walls of the well
@@ -1854,6 +1865,9 @@ def func(var):
     f24=fm[24]*(wtm/nH)*wtn*(nH-(var[28]*var[14]+var[27]*(2.0*var[7]+2.0*var[8])+var[26]*(2.0*var[15]+2.0*var[20]+4.0*var[18]+4.0*var[25])))
     f25=fm[25]*(5.0/nNa)*wtn*(nNa-(var[27]*(2.0*var[5]+2.0*var[6])+var[26]*var[24]))
     f26=fm[26]*(5.0/nC)*wtn*(nC-(var[27]*(var[9]+var[10])+var[26]*(var[18]+var[17]+var[16])))
+
+    ## ADDED FOR TESTING
+    f_massbalance_unpen = np.array([f20, f21, f22, f23, f24, f25, f26])
     
     # Add a 2-sided sigmoidal penalty function for mass balance equations outside of 0 +/- toler using the logistic function
     val=0.0 #expected values for f are zero
@@ -1886,6 +1900,9 @@ def func(var):
     f27=fm[27]*wtx*(1.0-var[0]-var[1]-var[2]-var[3]-var[4]-var[5]-var[6]-var[7]-var[8]-var[9]-var[10])
     f28=fm[28]*wtx*(1.0-var[11]-var[12]-var[13]-var[14])
     f29=fm[29]*wtx*(1.0-var[15]-var[16]-var[17]-var[18]-var[19]-var[20]-var[21]-var[22]-var[23]-var[24]-var[25])
+
+    ## ADDED FOR TESTING
+    f_summing_unpen = np.array([f29, f27, f28])
     
     # Add a 2-sided sigmoidal penalty function for sum of mole fractions -1 being outside of 0 +/- toler
     val=0.0 #expected values for f are zero
@@ -1935,6 +1952,11 @@ def func(var):
     P_guess=1.2e6*fratio*(Mplanet_Mearth)**(2.0/3.0) #bar
 # Error in pressure estimate
     f30=(P_guess-var[29])/P_guess
+
+    ## ADDED FOR TESTING
+    f_unpenalised = np.concatenate((f_reactions_unpen, f_massbalance_unpen, f_summing_unpen, np.array([f30])))
+    #print(f"func: array of unpenalised values: {f_unpenalised}")
+
 # Add a 2-sided sigmoidal penalty function outside of 0 +/- toler using the logistic function
     val=0.0 #expected values for f are zero
     sharp=1.0 #sharpness of sigmoidal edges, sharpness of the walls of the well
@@ -1955,6 +1977,8 @@ def func(var):
     sum3=1.0*sum3
     sum4=1.0*sum4
     sum=sum1+sum2+sum3+sum4
+
+    ## Array made for testing
     return sum
     
 #--------------------------------------------------------------------------------------------------------
@@ -1973,12 +1997,13 @@ print('Initial objective function =',cost)
 print('Initial gamma H metal = ',lngHmetal)
 
 #Estimate the mean cost function by sampling values
-num_test=50
+num_test=500
 cost_estimates=np.zeros(num_test)
 var_random=np.zeros(numvar)
 for k in range(0,num_test):
+    np.random.seed(k+2)
     for i in range(0,numvar):
-        var_random[i]=uniform(bounds[i,0],bounds[i,1])
+        var_random[i]=np.random.uniform(bounds[i,0],bounds[i,1])
 #        print('var', i, '=',var_random[i])
     cost_estimates[k]=func(var_random)
 #    print('test random cost values =',cost_estimates)
@@ -2000,8 +2025,15 @@ cost_smoothed=smoothTriangle(cost_estimates, 5)
 mean_cost=mean(cost_smoothed)
 sigma_cost=stdev(cost_smoothed)
 
-print('Mean Objective function at start =',mean_cost)
-print('Std deviation of smoothed Objective function at start =',sigma_cost)
+mean_unsmoothed = mean(cost_estimates)
+std_unsmoothed = stdev(cost_estimates)
+
+# mean_cost=mean(cost_estimates)
+# sigma_cost=stdev(cost_estimates)
+
+print(f"Calculating statistics over {num_test} iterations")
+print('Mean Objective function at start (smooth / unsmooth) =',mean_cost, "/", mean_unsmoothed)
+print('Std deviation of smoothed Objective function at start (smooth / unsmooth) =',sigma_cost, "/", std_unsmoothed)
 
 #CALCULATE INITIAL SEARCH TEMPERATURE based on % probability of accepting uphill;
 #The probability for accepting uphill results is the argument to the ln ... usually 0.8
@@ -2016,6 +2048,12 @@ print('Estimated initial search T =',T_estimate)
 # plt.show(block=False)  #Permit execution to continue with plot open
 # plt.pause(7) #Pause x seconds before moving on
 # plt.close()
+
+time2 = time.time()
+
+print(f"Young model finished in {time2 - time1} s")
+
+exit()
 
 Tini=T_estimate
 #Tini=100.0
@@ -2047,7 +2085,6 @@ print("solution for parameters x =",soln)
 quality=soln.fun/mean_cost
 print(" Objective function end/start =",quality)
 
-time2 = time.time()
 
 #Plot cost function at minima found during simulated annealing...
 name='progress.txt'

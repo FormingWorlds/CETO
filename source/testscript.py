@@ -54,46 +54,57 @@ variable_keys = ["MgO_melt", "SiO2_melt", "MgSiO3_melt", "FeO_melt", "FeSiO3_mel
             "Na_gas", "SiH4_gas", "moles_atm", "moles_melt", "moles_metal", "P_penalty"]
 variables_initial = [config[key] for key in variable_keys]
 
-F_ini = objectivefunction_initial(variables_initial, variable_keys, config, moles_initial, G)
-
-
 ## Calculate objective function first value
 P_estimate = calculate_pressure(config, config)
+
 variables = deepcopy(variables_initial)
 variables[-1] = P_estimate
+F_ini = objectivefunction_initial(variables, variable_keys, config, moles_initial, G)
 
+## Use initial values to calculate scale factor
 w_gas = 1.0/np.max(np.abs(F_ini[:19])) # Weight for thermodynamic equations 
                                        # from maximum objective function from the 19 reaction values
 
 Value = objectivefunction(variables, variable_keys, config, moles_initial, G, w_gas)
+print(Value)
 
-theta = deepcopy(variables_initial)
-y_model = model(theta, variable_keys, config, moles_initial, G)
-for i in range(len(y_model)):
-    print(y_model[i])
-## Sample objective function over 500 random sets of variables to estimate mean cost of function
-# bounds = get_bounds(config)
-# n_iters = 500
-# costs = np.zeros(n_iters)
-# random_variables = np.zeros(len(variables))
-# for i in range(n_iters):
-#     for j in range(len(variables)):
-#         random_variables[j] = np.random.uniform(bounds[j,0], bounds[j,1])
-#     costs[i] = objectivefunction(random_variables, variable_keys, config, moles_initial, G, w_gas)
+# theta = deepcopy(variables_initial)
+# y_model = model(theta, variable_keys, config, moles_initial, G)
+# for i in range(len(y_model)):
+#     print(y_model[i])
 
-# cost_smoothed = smoothTriangle(costs, 5)
-# mean_cost = np.mean(cost_smoothed)
-# std_cost = np.std(cost_smoothed)
+# Sample objective function over 500 random sets of variables to estimate mean cost of function
+bounds = get_bounds(config)
+n_iters = 500
+costs = np.zeros(n_iters)
+random_variables = np.zeros(len(variables))
+for i in range(n_iters):
+    np.random.seed(i+2)
+    for j in range(len(variables)):
+        random_variables[j] = np.random.uniform(bounds[j,0], bounds[j,1])
+    costs[i] = objectivefunction(random_variables, variable_keys, config, moles_initial, G, w_gas)
 
-# print(f"mean cost: {mean_cost}")
-# print(f"std cost: {std_cost}")
+cost_smoothed = smoothTriangle(costs, 5)
+mean_cost = np.mean(cost_smoothed)
+mean_unsmoothed = np.mean(costs)
+std_cost = np.std(cost_smoothed)
+std_unsmoothed = np.std(costs)
+
+#print(f"Initial objective function: {Value}")
+print(f"Caculating statistics over {n_iters} iterations")
+print(f"Maximum cost function over these iterations: {np.max(np.abs(costs))}")
+print(f"mean cost (smooth / unsmooth): {mean_cost} / {mean_unsmoothed}")
+print(f"std cost (smooth / unsmooth): {std_cost} / {std_unsmoothed}")
 
 # ## Invoke Simulated Annealing
 #     ## NOTE: the use of 'seed' in dual_annealing is legacy behaviour and will cease to work at some point
 #     ## in the future. keyword 'rng' takes over the functionality, so investigate using it instead soon.
 
-# T_estimate = -std_cost / ln(0.98)
-# print(f"Estimated initial search T: {T_estimate}")
+
+T_estimate = -std_cost / ln(0.98)
+print(f"Estimated initial search T: {T_estimate}")
+
+exit()
 
 # sol = dual_annealing(objectivefunction,bounds,maxiter=config["niters"],args=(variable_keys, config, moles_initial, G, w_gas), 
 #                      initial_temp=T_estimate, visit=2.98, maxfun=1e8, seed=user_seed, 

@@ -145,13 +145,19 @@ def calculate_pressure(D, config):
 
     molefrac_atm = D["moles_atm"] / moles_total
     molefrac_melt = D["moles_melt"] / moles_total
-    molefrac_metal = D["moles_metal"] / moles_total
+    molefrac_metal = 1.0 - molefrac_atm - molefrac_melt
 
-    totalmass = molefrac_atm*gpm_gas + molefrac_melt*gpm_melt + molefrac_metal*gpm_metal
+    grams_atm = gpm_gas*molefrac_atm
+    grams_melt = gpm_melt*molefrac_melt
+    grams_metal = gpm_metal*molefrac_metal
 
-    massfrac_atm = molefrac_atm*gpm_gas / totalmass
+
+    totalmass = grams_atm + grams_melt + grams_metal
+
+    massfrac_atm = grams_atm / totalmass
 
     fratio = massfrac_atm/(1.0-massfrac_atm)
+    print(f"Fratio: {fratio}")
     P = 1.2e6*fratio*(config["M_p"])**(2/3) # surface pressure in bar
     return P
 
@@ -228,18 +234,6 @@ def smoothTriangle(data, degree):
         smoothed.append(np.sum(point)/np.sum(triangle))
     # Handle Boundaries
     smoothed = [smoothed[0]]*int(degree + degree/2) + smoothed
-    while len(smoothed) < len(data):
-        smoothed.append(smoothed[-1])
-    return smoothed
-
-def smoothTriangle2(data, degree ):
-    triangle=np.concatenate((np.arange(degree + 1), np.arange(degree)[::-1])) # up then down
-    smoothed=[]
-    for i in range(degree, len(data) - degree * 2):
-        point=data[i:i + len(triangle)] * triangle
-        smoothed.append(np.sum(point)/np.sum(triangle))
-    # Handle boundaries
-    smoothed=[smoothed[0]]*int(degree + degree/2) + smoothed
     while len(smoothed) < len(data):
         smoothed.append(smoothed[-1])
     return smoothed

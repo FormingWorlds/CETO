@@ -72,18 +72,23 @@ def objectivefunction_initial(var, varkeys, config, initial_moles, G, Pstd=1.0):
         G["R19"] - 1.5*ln(P/Pstd)
     
     ## Mass balance for elements Si, Mg, O, Fe, H, Na, C, must be zero initially
-    f20 = initial_moles["Si"] - moles_in_system('Si', config)
-    f21 = initial_moles["Mg"] - moles_in_system('Mg', config)
-    f22 = initial_moles["O"] - moles_in_system('O', config)
-    f23 = initial_moles["Fe"] - moles_in_system('Fe', config)
-    f24 = initial_moles["H"] - moles_in_system('H', config)
-    f25 = initial_moles["Na"] - moles_in_system('Na', config)
-    f26 = initial_moles["C"] - moles_in_system('C', config)
+    f20 = initial_moles["Si"] - moles_in_system('Si', D)
+    f21 = initial_moles["Mg"] - moles_in_system('Mg', D)
+    f22 = initial_moles["O"] - moles_in_system('O', D)
+    f23 = initial_moles["Fe"] - moles_in_system('Fe', D)
+    f24 = initial_moles["H"] - moles_in_system('H', D)
+    f25 = initial_moles["Na"] - moles_in_system('Na', D)
+    f26 = initial_moles["C"] - moles_in_system('C', D)
 
     ## Summing constraint on mole fractions for gas, melt and metal phases
-    f27 = 1 - np.sum([D[key] for key in D if "_gas" in key and "moles" not in key and "wt" not in key])
-    f28 = 1 - np.sum([D[key] for key in D if "_melt" in key and "moles" not in key and "wt" not in key])
-    f29 = 1 - np.sum([D[key] for key in D if "_metal" in key and "moles" not in key and "wt" not in key and "bool" not in key])
+    ## Doing it now 'by hand' to force no rounding errors compared to Young
+    f27 = 1.0 - D["CH4_gas"] - D["H2_gas"] - D["CO2_gas"] - D["CO_gas"] - D["Fe_gas"] - D["H2O_gas"] - D["SiH4_gas"] - D["SiO_gas"] - D["Mg_gas"] - D["Na_gas"] - D["O2_gas"]
+    f28 = 1.0 - D["MgO_melt"] - D["MgSiO3_melt"] - D["SiO2_melt"] - D["FeO_melt"] - D["FeSiO3_melt"] - D["Na2O_melt"] - D["Na2SiO3_melt"] - D["H2O_melt"] - D["CO2_melt"] - D["CO_melt"] - D["H2_melt"]
+    f29 = 1.0 - D["H_metal"] - D["O_metal"] - D["Fe_metal"] - D["Si_metal"]
+
+    #f27 = 1.0 - np.sum([D[key] for key in D if "_gas" in key and "moles" not in key and "wt" not in key])
+    #f28 = 1.0 - np.sum([D[key] for key in D if "_melt" in key and "moles" not in key and "wt" not in key])
+    #f29 = 1.0 - np.sum([D[key] for key in D if "_metal" in key and "moles" not in key and "wt" not in key and "bool" not in key])
 
     F_initial = np.array([f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, 
              f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29])
@@ -114,16 +119,12 @@ def objectivefunction(var, varkeys, config, initial_moles, G, w_gas, Pstd=1.0):
     wt_melt = w_gas*config["wt_melt"]
     wt_evap = w_gas*config["wt_evap"]
 
-    P_guess = calculate_pressure(D, config)
-    P = (P_guess - D["P_penalty"]) / P_guess
-
     ## Create list of initial number of moles for each element to ensure proper indexing when assigning weights later
     nElements = list(initial_moles.values())
     wtm = 5.0                                                       # Extra weight factor for mass balance equations
 
     F_ini = objectivefunction_initial(var, varkeys, config, initial_moles, G, Pstd=Pstd)
     F_list = []                                                     # List to contain values for the 29 equations
-
 
     ## Assign weights to all equations
     for i in range(1,(len(F_ini)+1)): # Runs over a range of i in (1 - 29)
@@ -142,6 +143,10 @@ def objectivefunction(var, varkeys, config, initial_moles, G, w_gas, Pstd=1.0):
             f_i = wt_summing*config[f"wt_f{i}"] * f_i_ini
         F_list.append(f_i)
 
+    P_guess = calculate_pressure(D, config)
+    P = (P_guess - D["P_penalty"]) / P_guess
+    F_list.append(P)
+
     F_unpenalized = np.array(F_list) #convert to array before applying penalties
 
     ## Assign penalties
@@ -149,7 +154,7 @@ def objectivefunction(var, varkeys, config, initial_moles, G, w_gas, Pstd=1.0):
     F[0:19] = sigmoidal_penalty(F_unpenalized[0:19], 0, 5, 1, 10000) #value=0, sharpness=5, tolerance=1, magnitude=10,000
     F[19:26] = sigmoidal_penalty(F_unpenalized[19:26], 0, 1, 0.01, 1000) #value=0, sharpness=1, tolerance=0.01, magnitude=1,000
     F[26:29] = sigmoidal_penalty(F_unpenalized[26:29], 0, 1, 0.005, 100000) #value=0, sharpness=1, tolerance=0.005, magnitude=100,000
-    F[29] = sigmoidal_penalty(P, 0, 1, 0.2, D["P_penalty"]) #value=0, sharpness=1, tolerance=0.2, take magnitude from input
+    F[29] = sigmoidal_penalty(F_unpenalized[29], 0, 1, 0.2, config["P_penalty"]) #value=0, sharpness=1, tolerance=0.2, take magnitude from input
 
     ## Sum of squared errors in F
     sum = np.sum((F**2))
