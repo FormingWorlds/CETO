@@ -161,6 +161,18 @@ def objectivefunction(var, varkeys, config, initial_moles, G, w_gas, Pstd=1.0):
     return sum
 
 def model(theta, thetakeys, config, initial_moles, G, Pstd=1.0):
+    """Function sets up vector y_model of variable vector theta for later use in MCMC solver. y_model values are linked to model system of equations,
+       without pressure corrections or thermodynamics.
+       Parameters:
+       theta (1darray)          : 1darray of model variables
+       thetakeys (list)         : list of keys (strings) from which dictionary T will be formed using values contained in theta.
+       config (dict)            : Dictionary containing global model input.
+       inital_moles (dict)      : Dictionary containing initial amount of moles of Si, Mg, O, Fe, H, Na, C in system.
+       G (dict)                 : Dictionary containing G / RT terms for reactions 1-19 at relevant temperatures
+       Pstd (float, optional)   : Pressure at standard state, chosen to be 1.0 by default in keeping with Schlichting & Young (2022)
+       
+       Returns:
+       y_model (1darray)        : array of model values in order (len 30) """
     T = dict(zip(thetakeys, theta))
 
     F = objectivefunction_initial(theta, thetakeys, config, initial_moles, G, Pstd=Pstd)

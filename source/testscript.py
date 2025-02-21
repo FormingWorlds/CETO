@@ -66,7 +66,7 @@ w_gas = 1.0/np.max(np.abs(F_ini[:19])) # Weight for thermodynamic equations
                                        # from maximum objective function from the 19 reaction values
 
 Value = objectivefunction(variables, variable_keys, config, moles_initial, G, w_gas)
-print(Value)
+print(f"Initial value of objective function: {Value}")
 
 # theta = deepcopy(variables_initial)
 # y_model = model(theta, variable_keys, config, moles_initial, G)
@@ -86,7 +86,7 @@ for i in range(n_iters):
 try:
     cost_smoothed = smoothTriangle(costs, 5)
 except:
-    print("Number of iterations insufficient to allow for smoothing")
+    print("ERROR: Number of iterations insufficient to apply smoothTriangle.")
     cost_smoothed = costs
 
 mean_cost = np.mean(cost_smoothed)
@@ -96,25 +96,24 @@ std_unsmoothed = np.std(costs)
 
 #print(f"Initial objective function: {Value}")
 print(f"Caculating statistics over {n_iters} iterations")
-print(f"mean cost (smooth / unsmooth): {mean_cost} / {mean_unsmoothed}")
-print(f"std cost (smooth / unsmooth): {std_cost} / {std_unsmoothed}")
+print(f"    mean cost (smoothed):   {mean_cost}\n     mean cost (unsmoothed): {mean_unsmoothed}")
+print(f"    std cost (smoothed):   {std_cost}\n    std cost (unsmoothed): {std_unsmoothed}")
 
 # ## Invoke Simulated Annealing
 #     ## NOTE: the use of 'seed' in dual_annealing is legacy behaviour and will cease to work at some point
 #     ## in the future. keyword 'rng' takes over the functionality, so investigate using it instead soon.
 
-
 T_estimate = -std_cost / ln(0.98)
 print(f"Estimated initial search T: {T_estimate}")
 
 
-# sol = dual_annealing(objectivefunction,bounds,maxiter=config["niters"],args=(variable_keys, config, moles_initial, G, w_gas), 
-#                      initial_temp=T_estimate, visit=2.98, maxfun=1e8, seed=user_seed, 
-#                      accept=-500.0, restart_temp_ratio=1.0e-9)
+sol = dual_annealing(objectivefunction,bounds,maxiter=config["niters"],args=(variable_keys, config, moles_initial, G, w_gas), 
+                     initial_temp=T_estimate, visit=2.98, maxfun=1e8, seed=user_seed, 
+                     accept=-500.0, restart_temp_ratio=1.0e-9)
 
-# quality = sol.fun / mean_cost
-# print(sol)
-# print("Quality: ", quality)
+quality = sol.fun / mean_cost
+print(sol)
+print("Quality: ", quality)
 
 endtime = time.time()
 print(f"Script concluded in {endtime-starttime} s")

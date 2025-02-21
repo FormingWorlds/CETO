@@ -83,14 +83,8 @@ def moles_in_system(el, D):
                     else:
                         pass
         elif el in key and '_metal' in key:
-            if (el+'2') not in key and (el+'3') not in key and (el+'4') not in key:
-                el_inmetal += D[key]
-            else:
-                for coeff in range(2,5):
-                    if (el+str(coeff)) in key:
-                        el_inmetal += coeff*D[key]
-                    else:
-                        pass
+            el_inmetal += D[key]
+
         elif el in key and '_gas' in key:
             if (el+'2') not in key and (el+'3') not in key and (el+'4') not in key:
                 el_ingas += D[key]
