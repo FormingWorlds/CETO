@@ -83,8 +83,12 @@ for i in range(n_iters):
     for j in range(len(variables)):
         random_variables[j] = np.random.uniform(bounds[j,0], bounds[j,1])
     costs[i] = objectivefunction(random_variables, variable_keys, config, moles_initial, G, w_gas)
+try:
+    cost_smoothed = smoothTriangle(costs, 5)
+except:
+    print("Number of iterations insufficient to allow for smoothing")
+    cost_smoothed = costs
 
-cost_smoothed = smoothTriangle(costs, 5)
 mean_cost = np.mean(cost_smoothed)
 mean_unsmoothed = np.mean(costs)
 std_cost = np.std(cost_smoothed)
@@ -92,7 +96,6 @@ std_unsmoothed = np.std(costs)
 
 #print(f"Initial objective function: {Value}")
 print(f"Caculating statistics over {n_iters} iterations")
-print(f"Maximum cost function over these iterations: {np.max(np.abs(costs))}")
 print(f"mean cost (smooth / unsmooth): {mean_cost} / {mean_unsmoothed}")
 print(f"std cost (smooth / unsmooth): {std_cost} / {std_unsmoothed}")
 

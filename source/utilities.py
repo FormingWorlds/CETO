@@ -157,7 +157,6 @@ def calculate_pressure(D, config):
     massfrac_atm = grams_atm / totalmass
 
     fratio = massfrac_atm/(1.0-massfrac_atm)
-    print(f"Fratio: {fratio}")
     P = 1.2e6*fratio*(config["M_p"])**(2/3) # surface pressure in bar
     return P
 
@@ -186,7 +185,7 @@ def get_bounds(config):
             bounds[i, 1] = 1.0
         else:
             bounds[i, 0] = 1.0e-20
-            bounds[i, 1] = 0.9999
+            bounds[i, 1] = 0.99999
 
     ## Boundaries on total # moles per phase
     bounds[26, 0] = config["moles_atm"]*1.0e-20 
@@ -198,7 +197,7 @@ def get_bounds(config):
 
     ## Boundaries on pressure
     bounds[29, 0] = 1.0e-3
-    bounds[29, 1] = 9.0e5
+    bounds[29, 1] = 900000
 
     return bounds
 

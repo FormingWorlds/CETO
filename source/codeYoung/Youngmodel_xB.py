@@ -2020,13 +2020,19 @@ def smoothTriangle(data, degree ):
     while len(smoothed) < len(data):
         smoothed.append(smoothed[-1])
     return smoothed
-cost_smoothed=smoothTriangle(cost_estimates, 5)
 
-mean_cost=mean(cost_smoothed)
-sigma_cost=stdev(cost_smoothed)
+## Made this a try/except clause for simplicity
+try:
+    cost_smoothed=smoothTriangle(cost_estimates, 5)
+except:
+    print("number of iterations insufficient to allow for smoothing")
+    cost_smoothed=cost_estimates
 
-mean_unsmoothed = mean(cost_estimates)
-std_unsmoothed = stdev(cost_estimates)
+mean_cost=np.mean(cost_smoothed)
+sigma_cost=np.std(cost_smoothed)
+
+mean_unsmoothed = np.mean(cost_estimates)
+std_unsmoothed = np.std(cost_estimates)
 
 # mean_cost=mean(cost_estimates)
 # sigma_cost=stdev(cost_estimates)
