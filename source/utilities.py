@@ -52,7 +52,7 @@ def readconfig(path):
             "wt_f2", "wt_f3", "wt_f4", "wt_f5", "wt_f6", "wt_f7", "wt_f8", "wt_f9", "wt_f10", "wt_f11",
             "wt_f12", "wt_f13", "wt_f14", "wt_f15", "wt_f16", "wt_f17", "wt_f18", "wt_f19", "wt_f20", "wt_f21",
             "wt_f22", "wt_f23", "wt_f24", "wt_f25", "wt_f26", "wt_f27", "wt_f28", "wt_f29", "seed", "niters",
-            "offset_MCMC", "bool_unreactive_metal", "bool_nonideal_mixing"]
+            "offset_MCMC", "bool_unreactive_metal", "bool_ideal_mixing"]
     
     config = dict(zip(datakeys, data))
     return config

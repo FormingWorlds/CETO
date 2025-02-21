@@ -2001,7 +2001,7 @@ num_test=500
 cost_estimates=np.zeros(num_test)
 var_random=np.zeros(numvar)
 for k in range(0,num_test):
-    np.random.seed(k+2)
+    #np.random.seed(k+2) #Uncomment to force same random variables each run
     for i in range(0,numvar):
         var_random[i]=np.random.uniform(bounds[i,0],bounds[i,1])
 #        print('var', i, '=',var_random[i])

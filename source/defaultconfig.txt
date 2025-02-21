@@ -83,4 +83,4 @@
 
 ## Global Parameters (Bool)
 True     # Reactive Metal. If True, metal core will be able to chemically interact with rest of the system.
-True      # Non-ideal mixing. If True, equations enabling deviations from ideal mixing will be incorporated.
+False      # Ideal mixing. If True, all mixing will be treated as ideal.

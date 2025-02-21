@@ -75,11 +75,11 @@ print(Value)
 
 # Sample objective function over 500 random sets of variables to estimate mean cost of function
 bounds = get_bounds(config)
-n_iters = 500
+n_iters = 5000
 costs = np.zeros(n_iters)
 random_variables = np.zeros(len(variables))
 for i in range(n_iters):
-    np.random.seed(i+2)
+    # np.random.seed(i+2) Uncomment to force same random variables each run
     for j in range(len(variables)):
         random_variables[j] = np.random.uniform(bounds[j,0], bounds[j,1])
     costs[i] = objectivefunction(random_variables, variable_keys, config, moles_initial, G, w_gas)
@@ -107,7 +107,6 @@ print(f"std cost (smooth / unsmooth): {std_cost} / {std_unsmoothed}")
 T_estimate = -std_cost / ln(0.98)
 print(f"Estimated initial search T: {T_estimate}")
 
-exit()
 
 # sol = dual_annealing(objectivefunction,bounds,maxiter=config["niters"],args=(variable_keys, config, moles_initial, G, w_gas), 
 #                      initial_temp=T_estimate, visit=2.98, maxfun=1e8, seed=user_seed, 

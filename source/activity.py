@@ -12,9 +12,9 @@ def get_activity(D, config, get_all=False):
        D (dict)                 : Dictionary representing variable input for model; 
                                 retrieves mole fractions of species used in calculating coefficients.
        config (dict)            : Dictionary of global model input, retrieves parameters that are not 
-                                varied in the model: T_surface, T_eq, bool_nonideal_mixing. The latter
-                                controls non-ideality of activity coefficients. If True, lng terms will
-                                be computed via empirical formulae. If False, lng terms are zero.
+                                varied in the model: T_surface, T_eq, bool_ideal_mixing. The latter
+                                controls non-ideality of activity coefficients. If False, lng terms will
+                                be computed via empirical formulae. If True, lng terms are zero.
        get_all (Bool)           : Boolean controlling whether terms for H2, H2O_melt and H_metal are 
                                 computed and returned. These equations are implemented but their 
                                 validity is still under review. Default is False.
@@ -22,7 +22,7 @@ def get_activity(D, config, get_all=False):
        Returns:
        lng (list)               : List of lng terms for Si, O, H2, H2O (melt), H (metal) and xB."""
     
-    if config["bool_nonideal_mixing"] is True:
+    if config["bool_ideal_mixing"] is False:
         lngSi = -6.65*1873.0/config["T_eq"]-(12.41*1873.0/config["T_eq"])*ln(1.0-D["Si_metal"]) - \
         ((-5.0*1873.0/config["T_eq"])*D["O_metal"]*(1.0+ln(1-D["O_metal"])/D["O_metal"]-1.0/(1.0-D["Si_metal"]))) + \
         (-5.0*1873.0/config["T_eq"])*D["O_metal"]**2.0*D["Si_metal"]*(1.0/(1.0-D["Si_metal"])+1.0/(1.0-D["O_metal"]) + \
@@ -49,7 +49,7 @@ def get_activity(D, config, get_all=False):
             lngH2O_melt = 0.0
             lngH_metal = 0.0
 
-    else:
+    elif config['bool_ideal_mixing'] is True:
         lngSi = 0.0
         lngO = 0.0
         xB = 0.0
