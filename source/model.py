@@ -1,6 +1,7 @@
 from __future__ import annotations
 import numpy as np
 from numpy import log as ln
+import math
 
 try:
     from thermodynamics import calculate_GRT
@@ -193,3 +194,39 @@ def model(theta, thetakeys, config, initial_moles, G, Pstd=1.0):
     y_model[-1] = 100*(P_guess - theta[-1])/P_guess
 
     return y_model
+
+def lnlikelihood(theta, thetakeys, config, initial_moles, G, y, yerr):
+    """Function computes logarithm of likelihood probability based on model function."""
+    y_model = model(theta, thetakeys, config, initial_moles, G)
+    diff = ((y - y_model)**2) / ((yerr)**2)
+    lnlikelihood = -0.5*sum(diff)
+    return lnlikelihood
+
+
+def lnprior(theta):
+    """Function defines and returns logarithm of prior probability, prescribed by requirements of Emcee.
+       Priors are zero if the variable is within accepted boundaries, or -inf otherwise."""
+    for i in range(0,25):
+        if theta[i] < 0.0:
+            return -np.inf
+        if theta[i] > 1.00:
+            return -np.inf
+    if theta[26] < 0.0:
+        return -np.inf
+    elif theta[27] < 0.0:
+        return -np.inf
+    elif theta[28] < 0.0:
+        return -np.inf
+    return 0.0
+
+
+def lnprob(theta, thetakeys, config, initial_moles, G, y, yerr):
+    """Functions computes posterior probability as a product of likelihood and prior probabilities."""
+    prior = lnprior(theta)
+    if prior == -np.inf:
+        return -np.inf
+    likelihood = lnlikelihood(theta, thetakeys, config, initial_moles, G, y, yerr)
+    if math.isnan(likelihood):
+        return -np.inf
+    prob = prior + likelihood
+    return prob

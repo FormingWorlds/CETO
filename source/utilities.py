@@ -231,6 +231,12 @@ def smoothTriangle(data, degree):
         smoothed.append(smoothed[-1])
     return smoothed
 
+def progress_callback(x, fun, context):
+    a_file = open('progress.txt', 'a')
+    a_file.write("%10.5e \n" % fun)
+    a_file.close()
+
+
 
 
 
