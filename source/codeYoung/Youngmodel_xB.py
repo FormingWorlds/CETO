@@ -41,7 +41,11 @@ print("Read above! ")
 
 time1 = time.time()
 
-np.random.seed(42)
+user_seed = 42
+
+## Creating random number generators
+rng_global = np.random.default_rng(user_seed)
+rng_random = np.random.default_rng()
 
 # Supress warnings
 #warnings.simplefilter('ignore', RuntimeWarning)
@@ -1979,6 +1983,8 @@ def func(var):
     sum=sum1+sum2+sum3+sum4
 
     ## Array made for testing
+    # F = np.array([f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30])
+    # sum2 = np.sum(F**2)
     return sum
     
 #--------------------------------------------------------------------------------------------------------
@@ -1996,6 +2002,8 @@ print('')
 print('Initial objective function =',cost)
 print('Initial gamma H metal = ',lngHmetal)
 
+
+
 #Estimate the mean cost function by sampling values
 num_test=500
 cost_estimates=np.zeros(num_test)
@@ -2003,7 +2011,7 @@ var_random=np.zeros(numvar)
 for k in range(0,num_test):
     #np.random.seed(k+2) #Uncomment to force same random variables each run
     for i in range(0,numvar):
-        var_random[i]=np.random.uniform(bounds[i,0],bounds[i,1])
+        var_random[i]=rng_random.uniform(bounds[i,0],bounds[i,1])
 #        print('var', i, '=',var_random[i])
     cost_estimates[k]=func(var_random)
 #    print('test random cost values =',cost_estimates)
@@ -2055,12 +2063,6 @@ print('Estimated initial search T =',T_estimate)
 # plt.pause(7) #Pause x seconds before moving on
 # plt.close()
 
-time2 = time.time()
-
-print(f"Young model finished in {time2 - time1} s")
-
-exit()
-
 Tini=T_estimate
 #Tini=100.0
 print('Initial annealing T =',Tini)
@@ -2082,7 +2084,10 @@ nseed=nseed_prov
 if nseed_prov == 0:
     nseed=randint(1,500)
 print('Seed for search =',nseed)
-soln=dual_annealing(func,bounds,maxiter=iter,initial_temp=Tini,visit=2.98,maxfun=100000000, seed=42,\
+# soln=dual_annealing(func,bounds,maxiter=iter,initial_temp=Tini,visit=2.98,maxfun=100000000, seed=42,\
+#     accept=-500.0,restart_temp_ratio=1.0e-9,callback=progressF)
+
+soln=dual_annealing(func,bounds,maxiter=iter,initial_temp=Tini,visit=2.98,maxfun=100000000, seed=user_seed,\
     accept=-500.0,restart_temp_ratio=1.0e-9,callback=progressF)
 print('')
 print("solution for parameters x =",soln)
@@ -2120,6 +2125,9 @@ print('MCMC Search beginning....')
 print('')
 theta=np.zeros(numvar)
 theta=soln.x #Current estimate of best parameters from simulated annealing is assigned to model vector theta
+
+print(f"Vector theta: \n{theta}")
+
 y_model=np.zeros(numvar) # These equilibrium constants and mass-balance constraints comprise our model
 yerr=np.zeros(numvar) # Will use this for estimates of uncertainties in equilibrium constants and mass-balance constraints
 
@@ -2308,9 +2316,9 @@ def model(theta):
 
 
 ## Added for troubleshooting and testing by Jorick
-model_test = model(var_initial)
-print("printing var to test: \n", var_initial)
-np.savetxt('modeltest.txt', model_test)
+# model_test = model(var_initial)
+# print("printing var to test: \n", var_initial)
+# np.savetxt('modeltest.txt', model_test)
 
 #--------------------------------------------------------------------------------------------------------
 # DEFINE LIKELIHOOD FUNCTION, making use of model function above.
@@ -2371,11 +2379,11 @@ print('yerr(errors for model)= \n ',yerr)
 print('')
 
 # INPUT MCMC PARAMETERS: Set number of independent Markov chain walkers and iterations
-nwalkers=200 #100
+nwalkers=150 #100
 
 # Utilize thin for emcee to return every thin'th sample, add thin_by=thin to smapler.run_mcmc options
 thin=10
-niter=1000000 #2000000 works
+niter=2500000 #2000000 works
 niter_eff = int(niter/thin) # emcee does niter*thin iteractions, so correct for this to save time if using thin
         
 # p0 is the array of initial positions for each walker, i.e., each separate
@@ -2386,7 +2394,8 @@ niter_eff = int(niter/thin) # emcee does niter*thin iteractions, so correct for 
 # "Initial state has a large condition number" is returned from emcee, indicating
 # walkers are not sufficiently independent.
 n=numvar
-p0=[(theta)+ranoffset*np.random.randn(n) for i in range(nwalkers)]  #+1.0e-9*np.random.randn(n)
+newoffset = 1e-6
+p0=[(theta)+newoffset*rng_random.standard_normal(n) for i in range(nwalkers)]  #+1.0e-9*np.random.randn(n)
 
 # DEFINE A FUNCTION THAT RUNS MCMC SEARCH.  Start by instantiating the EnsembleSampler.
 # for emcee.
@@ -2415,18 +2424,87 @@ print('...MCMC search completed.')
 
 # Concatenate all walker results into a single chain, array is (nwalkers*iterations x n(variables))
 # or said another way, each row is a test position, each column is a variable.
-samples=sampler.flatchain
-posteriors=sampler.flatlnprobability
+samples = sampler.get_chain()
+posteriors = sampler.get_log_prob()
 
-print('memory required for chain = ', samples.size * samples.itemsize)
+samples_thinned = sampler.get_chain(thin=100)
+posteriors_thinned = sampler.get_log_prob(thin=100)
+
+samples_flat=sampler.flatchain
+posteriors_flat=sampler.flatlnprobability
+
+print('memory required for chain = ', samples_flat.size * samples_flat.itemsize)
 
 # Find dimensions of the returned data for the chains
-print('sampler.flatchain shape = ',np.shape(samples))
-print('sampler.flatlnprobability shape = ',np.shape(posteriors))
+print('sampler.flatchain shape = ',np.shape(samples_flat))
+print('sampler.flatlnprobability shape = ',np.shape(posteriors_flat))
+
+## Calculate mean acceptance fraction and autocorrelation time
+try:
+    mean_af = np.mean(sampler.acceptance_fraction)
+    print(f"Mean acceptance fraction: {mean_af}")
+    mean_tau = np.mean(sampler.get_autocorr_time())
+    print(f"Mean autocorrelation time: {mean_tau}")
+except:
+    print(f"Failed to compute autocorrelation time. Try running a longer chain.")
+
+## Inspect behaviour of cost function and model function throughout run
+fig, axs = plt.subplots(10, 1, figsize=(10,100))
+for i in range(10):
+    i_walker = int((i*15))  #inspect for 10 walkers in ensemble
+    chain_of_vars = samples_thinned[:,i_walker,:]
+    len_chain = np.shape(chain_of_vars)[0]
+    result_func = [func(chain_of_vars[j,:]) for j in range(len_chain)]
+    #result_model = [model(chain_of_vars[j,:]) for j in range(len_chain)]
+    axs[i].plot(np.arange(len_chain), result_func)
+    axs[i].set_title(f'Objective Function over MCMC run for walker {i_walker}')
+    axs[i].set_ylabel("Objective Function")
+    axs[i].set_xlabel("Iterations")
+    axs[i].set_yscale("log")
+plt.savefig("func_MCMC.png")
+
+## Compute Gelman-Rubin statistic on each variable via function
+def gelman_rubin(samples):
+    """Compute the Gelman-Rubin statistic for all variables in an emcee MCMC sample.
+       Function obtains chain length, number of walkers and number of variable from the sample.
+       For each variable, the Gelman-Rubin statistic is then computed by finding the variance
+       within each chain and the variance across all chains.
+       Parameters:
+       samples (numpy.ndarray)        : array representing samples from an MCMC run. Expected dimensions are
+                                       [[number of iterations],[number of walkers],[number of variables]].
+       Returns:
+       statistics (numpy.1darray)     : array with the computed Gelman-Rubin statistic for each variable."""
+    S = np.shape(samples)
+    chain_length = S[0]    #length of chains
+    num_walkers = S[1]     #number of walkers
+    num_variables = S[2]   #number of variables
+
+    statistics = np.zeros(num_variables)
+    
+    for i in range(num_variables):
+        chain_mean = np.zeros(num_walkers)
+        chain_variance = np.zeros(num_walkers)
+        
+        for j in range(num_walkers):
+            walker = samples[:,j,i]       # iterate over each variable in each walker
+            chain_mean[j] = np.mean(walker)
+            chain_variance[j] = np.var(walker)
+            
+        grand_mean = np.mean(chain_mean)  # Mean across all walkers
+        B = (chain_length / (num_walkers-1))*np.sum((chain_mean - grand_mean)**2) # Variance between chains
+        W = np.mean(chain_variance) # mean variance within chains
+        
+        R = ( ((chain_length-1)/chain_length)*W + (1/chain_length)*B ) / W # will tend to 1 as B->0 and L-> inf
+        statistics[i] = R
+    return statistics
+        
+GR = gelman_rubin(samples)
+print('')
+print(f"Gelman-Rubin statistic for each variable (values in the range of 0.9 - 1.1 are acceptable): \n{GR}")
 
 # Select as your best set of parameters theta in the sampler that has the greatest posterior probability
 # by interrogating the ln probability for each sample, also concatenated from all walkers
-result=samples[np.argmax(sampler.flatlnprobability)]
+result=samples_flat[np.argmax(sampler.flatlnprobability)]
 
 # Best-fit final model consisting of equilibrium constants, total moles of components, and mole fraction sums
 best_fit_model = model(result)
@@ -2827,6 +2905,20 @@ a_file = open('output_summary_atm_SiH4_xB.txt', 'w')
 a_file.write("%10.5e " %red_chi_square)
 a_file.write('# Red chi-square of fit\n')
 
+## Added by Jorick
+a_file.write("%10.5e " %mean_af)
+a_file.write('# Mean acceptance fraction of MCMC run\n')
+
+for i in range(len(GR)):
+    a_file.write("%10.5e  " %GR[i])
+    a_file.write(f"# Gelman-Rubin statistic for {var_names[i]}")
+
+try:
+    a_file.write("%10.5e " %mean_tau)
+    a_file.write('# Mean estimated autocorrelation time of MCMC run\n')
+except:
+    pass
+
 a_file.write("%10.5e " %Mplanet_Mearth)
 a_file.write('# Planet mass in Earth masses\n')
 a_file.write("%10.5e " %temp)
@@ -2934,35 +3026,44 @@ def copy_inputs(name_initial):
     afile.close()
 copy_inputs(name_initial)
 
+time2=time.time()
+print(f"Time elapsed for Young model (excluding final plots) = {time2 - time1} s")
+
+## plot histogram of posteriors
+# plt.hist(posteriors, 100,histtype="step")
+# plt.xlabel('ln(Posteriors)')
+# plt.show(block=False)
+# plt.pause(10)
+# plt.savefig('ln_posteriors_hist.png')
+# plt.close()
+
+# print('histogram of ln(posteriors) saved as ln_posteriors_hist.png')
+# print('')
+
+# time3 = time.time()
+
+print('Creating Corner Plot of atmosphere (to test)')
+print('')
+
+N = int(0.25*(np.shape(samples_flat)[0]))
+
+# CORNERS allows us to make corner plots of the samplings for the search
+labels=['xMgO','xSiO2','xMgSiO3','xFeO','xFeSiO3','xNa2O','xNa2SiO3','xH2m','xH2Om', \
+'xCOm','xCO2m','xFe','xSi','xO','xH','xH2g','xCOg','xCO2g','xCH4g','xO2g', \
+'xH2Og','xFeg','xMg','xSiOg','xNag','xSiH4','Matm','Msil','Mmetal',' Press']
+labels_short=labels[:] #replaces labels
+smpl_test=samples_flat[N:,:] #replaces samples
+figure = corner.corner(smpl_test,show_titles=True,labels=labels_short,plot_datapoints=True) #plot_datapoints=True
+plt.show() # necessary to show the actual plot
+figure.savefig("corner_all.png")
+plt.close()
+
+time4 = time.time()
+
+print(f"Time elapsed for creating corner plot: {time4-time2} s")
 
 
-# plot histogram of posteriors
-#plt.hist(posteriors, 100,histtype="step")
-#plt.xlabel('ln(Posteriors)')
-#plt.show(block=False)
-#plt.pause(10)
-#plt.savefig('ln_posteriors_hist.png')
-#plt.close()
-#
-#print('histogram of ln(posteriors) saved as ln_posteriors_hist.png')
-#print('')
-
-#print('Making corner plot, this takes a very long while...')
-#print('')
-#
-## CORNERS allows us to make corner plots of the samplings for the search
-#labels=['xMgO','xSiO2','xMgSiO3','xFeO','xFeSiO3','xNa2O','xNa2SiO3','xH2m','xH2Om', \
-#'xCOm','xCO2m','xFe','xSi','xO','xH','xH2g','xCOg','xCO2g','xCH4g','xO2g', \
-#'xH2Og','xFeg','xMg','xSiOg','xNag','xSiH4','Matm','Msil','Mmetal',' Press']
-#labels_short=labels[12:26] #replaces labels
-#smpl_test=samples[:,12:26] #replaces samples
-#figure = corner.corner(smpl_test,show_titles=True,labels=labels_short,plot_datapoints=True) #plot_datapoints=True
-##plt.show() # necessary to show the actual plot
-#figure.savefig("corner_atmosphere.png")
-#plt.close()
-
-
-print('End.')
+print(f'End, total elapsed time: {time4-time1} s')
 
 
 

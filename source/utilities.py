@@ -236,6 +236,40 @@ def progress_callback(x, fun, context):
     a_file.write("%10.5e \n" % fun)
     a_file.close()
 
+def gelman_rubin(samples):
+    """Compute the Gelman-Rubin statistic for all variables in an emcee MCMC sample.
+       Function obtains chain length, number of walkers and number of variable from the sample.
+       For each variable, the Gelman-Rubin statistic is then computed by finding the variance
+       within each chain and the variance across all chains.
+       Parameters:
+       samples (numpy.ndarray)        : array representing samples from an MCMC run. Expected dimensions are
+                                       [[number of iterations],[number of walkers],[number of variables]].
+       Returns:
+       statistics (numpy.1darray)     : array with the computed Gelman-Rubin statistic for each variable."""
+    S = np.shape(samples)
+    chain_length = S[0]    #length of chains
+    num_walkers = S[1]     #number of walkers
+    num_variables = S[2]   #number of variables
+
+    statistics = np.zeros(num_variables)
+    
+    for i in range(num_variables):
+        chain_mean = np.zeros(num_walkers)
+        chain_variance = np.zeros(num_walkers)
+        
+        for j in range(num_walkers):
+            walker = samples[:,j,i]       # iterate over each variable in each walker
+            chain_mean[j] = np.mean(walker)
+            chain_variance[j] = np.var(walker)
+            
+        grand_mean = np.mean(chain_mean)  # Mean across all walkers
+        B = (chain_length / (num_walkers-1))*np.sum((chain_mean - grand_mean)**2) # Variance between chains
+        W = np.mean(chain_variance) # mean variance within chains
+        
+        R = ( ((chain_length-1)/chain_length)*W + (1/chain_length)*B ) / W # will tend to 1 as B->0 and L-> inf
+        statistics[i] = R
+    return statistics
+
 
 
 
