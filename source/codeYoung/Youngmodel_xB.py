@@ -2,6 +2,7 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
+import argparse
 from numpy import log as ln
 from numpy import log10 as log
 from numpy import exp as exp
@@ -19,6 +20,12 @@ import warnings
 from multiprocessing.pool import Pool
 from multiprocessing import get_start_method
 from multiprocessing import get_context
+
+## Argument parser
+parser = argparse.ArgumentParser()
+parser.add_argument("--inputfile",nargs="?",default="initial_atm_vMCMC_2024.txt",type=str)
+parser.add_argument("--runID",nargs="?",default='run',type=str)
+args=parser.parse_args()
 
 print(" ")
 print(" ")
@@ -40,12 +47,6 @@ print("--------------------------------------------------")
 print("Read above! ")
 
 time1 = time.time()
-
-user_seed = 42
-
-## Creating random number generators
-rng_global = np.random.default_rng(user_seed)
-rng_random = np.random.default_rng()
 
 # Supress warnings
 #warnings.simplefilter('ignore', RuntimeWarning)
@@ -82,11 +83,12 @@ numvar=30  # ORIGINALLY 2
 var=np.zeros(numvar)
 
 # VALUES CONTAIN ALL MODEL INPUT PARAMETERS IN ORDER
-print('Opening initial_atm_vMCMC_2024.txt...')
-name="initial_atm_vMCMC_2024.txt"
-count = len(open(name).readlines())
+filename = args.inputfile
+print(f'Opening config: {filename}...')
+
+count = len(open(filename).readlines())
 print('  Input file length = ', count)
-values=np.genfromtxt(name,'float')  # Read from file into values
+values=np.genfromtxt(filename,'float')  # Read from file into values
 print('')
 for i in range(0,numvar-1):
     var[i]=values[i]
@@ -148,7 +150,18 @@ while k < 30:
     k=k+1
 
 #Input seed value from file
+## Creating random number generators
+rng_random = np.random.default_rng()
+
 nseed_prov=int(values[67])
+if nseed_prov == 0:
+    randomseed = rng_random.integers(0, 1000)
+    rng_global = np.random.default_rng(randomseed)
+else:
+    randomseed = nseed_prov
+    rng_global = np.random.default_rng(nseed_prov)
+
+print(f'Provided seed is zero; random seed for run: {randomseed}')
 
 #Assign iterations per temperature for sim annealing
 iter=int(values[68])
@@ -159,6 +172,8 @@ print('Number of iterations =',iter)
 ranoffset=float(values[69])
 print('')
 print('Offset for walkers = %10.3e' %ranoffset)
+
+
     
 #var[0]=0.001 # MgO melt
 #var[1]=0.001 # SiO2 melt
@@ -2080,14 +2095,15 @@ print('')
 # accept ranges from -5 to -10000, -500 works well, lower means lower prob of acceptance;
 # seed selects a random number for the seed and reports the seed to the user;
 # no_local_search=True causes classical simulated annealing with no local search strategy.
-nseed=nseed_prov
-if nseed_prov == 0:
-    nseed=randint(1,500)
-print('Seed for search =',nseed)
+
+# nseed=nseed_prov
+# if nseed_prov == 0:
+#     nseed=randint(1,500)
+print('Seed for search =',randomseed)
 # soln=dual_annealing(func,bounds,maxiter=iter,initial_temp=Tini,visit=2.98,maxfun=100000000, seed=42,\
 #     accept=-500.0,restart_temp_ratio=1.0e-9,callback=progressF)
 
-soln=dual_annealing(func,bounds,maxiter=iter,initial_temp=Tini,visit=2.98,maxfun=100000000, seed=user_seed,\
+soln=dual_annealing(func,bounds,maxiter=iter,initial_temp=Tini,visit=2.98,maxfun=100000000, seed=randomseed,\
     accept=-500.0,restart_temp_ratio=1.0e-9,callback=progressF)
 print('')
 print("solution for parameters x =",soln)
@@ -2383,7 +2399,7 @@ nwalkers=150 #100
 
 # Utilize thin for emcee to return every thin'th sample, add thin_by=thin to smapler.run_mcmc options
 thin=10
-niter=2500000 #2000000 works
+niter=1000000 #2000000 works
 niter_eff = int(niter/thin) # emcee does niter*thin iteractions, so correct for this to save time if using thin
         
 # p0 is the array of initial positions for each walker, i.e., each separate
@@ -2461,7 +2477,7 @@ for i in range(10):
     axs[i].set_ylabel("Objective Function")
     axs[i].set_xlabel("Iterations")
     axs[i].set_yscale("log")
-plt.savefig("func_MCMC.png")
+plt.savefig(f"{args.runID}_ObjFunc.png")
 
 ## Compute Gelman-Rubin statistic on each variable via function
 def gelman_rubin(samples):
@@ -2900,18 +2916,22 @@ print('')
 print('')
 
 #Write summary of results to a file
-a_file = open('output_summary_atm_SiH4_xB.txt', 'w')
+outputname = args.runID
+outputfilename = f"{outputname}_output_summary.txt"
+a_file = open(outputfilename, 'w')
 
 a_file.write("%10.5e " %red_chi_square)
 a_file.write('# Red chi-square of fit\n')
 
 ## Added by Jorick
+a_file.write(f"{nseed_prov}  ")
+a_file.write('# User-provided seed for model run')
+
+a_file.write(f"{randomseed}  ")
+a_file.write('# Generated seed (unique if user seed is nonzero)')
+
 a_file.write("%10.5e " %mean_af)
 a_file.write('# Mean acceptance fraction of MCMC run\n')
-
-for i in range(len(GR)):
-    a_file.write("%10.5e  " %GR[i])
-    a_file.write(f"# Gelman-Rubin statistic for {var_names[i]}")
 
 try:
     a_file.write("%10.5e " %mean_tau)
@@ -3007,15 +3027,21 @@ for i in range(0,19):
     else:
         a_file.write("%10.5e  " %K[i])
     a_file.write('# Model KEQ for rxn %d : %s \n' %((i+1),rxn_names[i+1]))
+
+a_file.write('## Gelman-Rubin Statistics for variables \n')
+for i in range(len(GR)):
+    a_file.write("%10.5e  " %GR[i])
+    a_file.write(f"# Gelman-Rubin statistic for {var_names[i]}\n")
+
 a_file.close()
 print('')
 # APPEND input file to the output_summary file
-name_initial='initial_atm_vMCMC_2024.txt'
+name_initial=filename
 def copy_inputs(name_initial):
     count = len(open(name_initial).readlines())
     file_input=open(name_initial, 'r')
     Lines =file_input.readlines()
-    afile = open('output_summary_atm_SiH4_xB.txt', 'a+')
+    afile = open(outputfilename, 'a+')
     afile.write('\nINPUT FILE:\n')
     i=0
     while i < count:
@@ -3042,10 +3068,10 @@ print(f"Time elapsed for Young model (excluding final plots) = {time2 - time1} s
 
 # time3 = time.time()
 
-print('Creating Corner Plot of atmosphere (to test)')
+print('Creating Corner Plot')
 print('')
 
-N = int(0.25*(np.shape(samples_flat)[0]))
+N = int(0.75*(np.shape(samples_flat)[0]))
 
 # CORNERS allows us to make corner plots of the samplings for the search
 labels=['xMgO','xSiO2','xMgSiO3','xFeO','xFeSiO3','xNa2O','xNa2SiO3','xH2m','xH2Om', \
@@ -3055,7 +3081,7 @@ labels_short=labels[:] #replaces labels
 smpl_test=samples_flat[N:,:] #replaces samples
 figure = corner.corner(smpl_test,show_titles=True,labels=labels_short,plot_datapoints=True) #plot_datapoints=True
 plt.show() # necessary to show the actual plot
-figure.savefig("corner_all.png")
+figure.savefig(f"{args.runID}_corner_all.png")
 plt.close()
 
 time4 = time.time()
