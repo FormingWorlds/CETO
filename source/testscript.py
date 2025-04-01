@@ -1,7 +1,7 @@
 ## Package Imports
 import numpy as np
 import numpy.testing as npt
-from copy import copy, deepcopy
+from copy import deepcopy
 from pathlib import Path
 from constants import *
 from scipy.optimize import dual_annealing, minimize
@@ -16,30 +16,38 @@ from thermodynamics import *
 from activity import *
 from model import *
 from utilities import *
+from newmodel import *
 
 starttime = time.time()
 
 ## Reading model input from config file
 sourcedir = Path(__file__).parent
 path_to_config = sourcedir / 'defaultconfig.txt'
+#path_to_config = sourcedir / 'test_lowT.txt'
+
 config = readconfig(path_to_config)
 
-## Seed random generators
-#user_seed = D["seed"]
-user_seed = 42
-if user_seed == 0:
-    user_seed = np.random.randint(1, 1000) #draw random seed from uniform distribution
+## Creating random number generators
+rng_random = np.random.default_rng()
 
-print(f"Seeding random generator with seed={user_seed}")
-np.random.seed(user_seed)                  #re-seed generator with user_seed
+user_seed=config["seed"]
+if user_seed == 0:
+    randomseed = rng_random.integers(0, 1000)
+    rng_global = np.random.default_rng(randomseed)
+    print(f'Provided seed is zero; random seed for run: {randomseed}')
+else:
+    randomseed = user_seed
+    rng_global = np.random.default_rng(randomseed)
+    print(f"Seeding random generator with user seed: {user_seed}")
 
 ## Compute initial moles in system
 elements_keys = ['Si', 'Mg', 'O', 'Fe', 'H', 'Na', 'C']
 elements_values = [moles_in_system(element, config) for element in elements_keys]
+nSi, nMg, nO, nFe, nH, nNa, nC = elements_values
 moles_initial = dict(zip(elements_keys, elements_values))
 
 ## Compute thermodynamics
-T_array  = np.linspace(1300.0, config["T_eq"], 200)
+T_array  = np.linspace(1000.0, config["T_eq"], 200)
 GRT_list = calculate_GRT(T_array)
 GRT_vals = []; GRT_keys = []
 for i in range(len(GRT_list)):
@@ -59,17 +67,16 @@ variable_keys = ["MgO_melt", "SiO2_melt", "MgSiO3_melt", "FeO_melt", "FeSiO3_mel
 variables_initial = [config[key] for key in variable_keys]
 
 ## Calculate objective function first value
-P_estimate = calculate_pressure(config, config)
-
+P_initial = calculate_pressure(config, config)
 variables = deepcopy(variables_initial)
-variables[-1] = P_estimate
+variables[-1] = P_initial
 F_ini = objectivefunction_initial(variables, variable_keys, config, moles_initial, G)
 
 ## Use initial values to calculate scale factor
 w_gas = 1.0/np.max(np.abs(F_ini[:19])) # Weight for thermodynamic equations 
                                        # from maximum objective function from the 19 reaction values
 
-Value = objectivefunction(variables, variable_keys, config, moles_initial, G, w_gas)
+Value = newobjectivefunction(variables, config, moles_initial, G, w_gas)
 print(f"Initial value of objective function: {Value}")
 
 # theta = deepcopy(variables_initial)
@@ -79,14 +86,13 @@ print(f"Initial value of objective function: {Value}")
 
 # Sample objective function over 500 random sets of variables to estimate mean cost of function
 bounds = get_bounds(config)
-n_iters = 5000
+n_iters = 500
 costs = np.zeros(n_iters)
 random_variables = np.zeros(len(variables))
 for i in range(n_iters):
-    # np.random.seed(i+2) Uncomment to force same random variables each run
     for j in range(len(variables)):
-        random_variables[j] = np.random.uniform(bounds[j,0], bounds[j,1])
-    costs[i] = objectivefunction(random_variables, variable_keys, config, moles_initial, G, w_gas)
+        random_variables[j] = rng_random.uniform(bounds[j,0], bounds[j,1])
+    costs[i] = newobjectivefunction(random_variables, config, moles_initial, G, w_gas)
 try:
     cost_smoothed = smoothTriangle(costs, 5)
 except:
@@ -98,7 +104,7 @@ mean_unsmoothed = np.mean(costs)
 std_cost = np.std(cost_smoothed)
 std_unsmoothed = np.std(costs)
 
-#print(f"Initial objective function: {Value}")
+print(f"Initial objective function: {Value}")
 print(f"Caculating statistics over {n_iters} iterations")
 print(f"    mean cost (smoothed):   {mean_cost}\n     mean cost (unsmoothed): {mean_unsmoothed}")
 print(f"    std cost (smoothed):   {std_cost}\n    std cost (unsmoothed): {std_unsmoothed}")
@@ -110,9 +116,8 @@ print(f"    std cost (smoothed):   {std_cost}\n    std cost (unsmoothed): {std_u
 T_estimate = -std_cost / ln(0.98)
 print(f"Estimated initial search T: {T_estimate}")
 
-
-sol = dual_annealing(objectivefunction,bounds,maxiter=10000,args=(variable_keys, config, moles_initial, G, w_gas), 
-                     initial_temp=50000, visit=2.98, maxfun=1e8, seed=user_seed, 
+sol = dual_annealing(newobjectivefunction,bounds,maxiter=config["niters"],args=(config, moles_initial, G, w_gas), 
+                     initial_temp=1e18, visit=2.98, maxfun=1e8, seed=42, 
                      accept=-500.0, restart_temp_ratio=1.0e-9)
 
 # sol = dual_annealing(objectivefunction,bounds,maxiter=config["niters"],args=(variable_keys, config, moles_initial, G, w_gas), 
@@ -126,6 +131,8 @@ print("Quality: ", quality)
 
 ## Setting up vectors for MCMC search
 theta_self = sol.x
+
+## Theta array taken directly from Young's code
 theta = np.array([5.08532272e-02, 3.10898511e-01, 1.82280854e-01, 9.94405227e-02,
  5.28188124e-03, 2.68694569e-05, 5.60674644e-03, 5.68730380e-02,
  3.14517876e-01, 2.16406471e-04, 2.21736058e-04, 4.81660600e-01,

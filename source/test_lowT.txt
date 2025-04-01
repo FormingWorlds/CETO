@@ -3,22 +3,22 @@
 # format by the model controller
 
 ## Composition (values are float between 0 and 1)
-0.032     # MgO melt
+0.035     # MgO melt
 0.001     # SiO2 melt
-0.9211    # MgSiO3 melt
+0.92      # MgSiO3 melt
 0.0005    # FeO melt
-0.0005    # FeSiO3 melt
+0.035     # FeSiO3 melt
 0.007     # Na2O melt
 0.001     # Na2SiO3 melt
 1.0e-9    # H2 melt
 1.0e-9    # H2O melt
 1.0e-9    # CO melt
 1.0e-9    # CO2 melt
-0.99      # Fe metal 
+0.999     # Fe metal 
 1.0e-9    # Si metal 
 1.0e-9    # O metal 
 1.0e-9    # H metal 
-0.999     # H2 gas 
+0.99      # H2 gas 
 0.001     # CO gas 
 1.0e-9    # CO2 gas 
 1.0e-9    # CH4 gas 
@@ -31,12 +31,12 @@
 1.0e-13   # SiH4 gas 
 
 ## Planet Parameters (floats)
-1448.0    # Moles atmosphere 
+1400.0    # Moles atmosphere 
 2000.0    # Moles silicate mantle
-1230.0    # Moles metal core 
+1200.0    # Moles metal core 
 4.0       # Planet mass in Earth masses 
-3500.0    # Surface Temperature, eg. temperature at mantle-atmosphere boundary in Kelvin 
-6000.0    # Core-mantle equilibration temperature, eg. temperature at core-mantle boundary in Kelvin
+1000.0    # Surface Temperature, eg. temperature at mantle-atmosphere boundary in Kelvin 
+2000.0    # Core-mantle equilibration temperature, eg. temperature at core-mantle boundary in Kelvin
 
 ## Weight Factors (floats)
 300.0     # Pressure penalty 
@@ -79,7 +79,7 @@
 ## Miscellaneous
 42         # Seed for random generators; if zero then seed will be chosen randomly (integer)
 2000      # Number of iterations at each temperature for dual annealing (integer)
-1.0e-06   # Offset in random positions of MCMC walkers (float)
+1.0e-07   # Offset in random positions of MCMC walkers (float)
 
 ## Global Parameters (Bool)
 True     # Reactive Metal. If True, metal core will be able to chemically interact with rest of the system.

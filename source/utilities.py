@@ -69,9 +69,9 @@ def moles_in_system(el, D):
        Returns:
        nElement (float)         : Number of moles of requested element in system across melt, metal and gas phases.
        """
-    el_inmelt = 0
-    el_ingas = 0
-    el_inmetal = 0
+    el_inmelt = 0.0
+    el_ingas = 0.0
+    el_inmetal = 0.0
     for key in D:
         if el in key and '_melt' in key:
             if (el+'2') not in key and (el+'3') not in key and (el+'4') not in key:
@@ -79,7 +79,7 @@ def moles_in_system(el, D):
             else:
                 for coeff in range(2,5):
                     if (el+str(coeff)) in key:
-                        el_inmelt += coeff*D[key]
+                        el_inmelt += float(coeff)*D[key]
                     else:
                         pass
         elif el in key and '_metal' in key:
@@ -91,7 +91,7 @@ def moles_in_system(el, D):
             else:
                 for coeff in range(2,5):
                     if (el+str(coeff)) in key:
-                        el_ingas += coeff*D[key]
+                        el_ingas += float(coeff)*D[key]
                     else:
                         pass
 
@@ -107,9 +107,9 @@ def gpm_phases(D):
        gpm_gas (float)      : total number of grams per mole of atmosphere
        gpm_melt (float)     : total number of grams per mole of silicate mantle
        gpm_metal (float)    : total number of grams per mole of metal core."""
-    gpm_gas = 0
-    gpm_melt = 0
-    gpm_metal = 0
+    gpm_gas = 0.0
+    gpm_melt = 0.0
+    gpm_metal = 0.0
     for key in D:
         if "_gas" in key and 'moles' not in key and 'wt' not in key:
             speciesname = key.replace('_gas','')
@@ -151,7 +151,7 @@ def calculate_pressure(D, config):
     massfrac_atm = grams_atm / totalmass
 
     fratio = massfrac_atm/(1.0-massfrac_atm)
-    P = 1.2e6*fratio*(config["M_p"])**(2/3) # surface pressure in bar
+    P = 1.2e6*fratio*(config["M_p"])**(2.0/3.0) # surface pressure in bar
     return P
 
 
@@ -182,16 +182,16 @@ def get_bounds(config):
             bounds[i, 1] = 0.99999
 
     ## Boundaries on total # moles per phase
-    bounds[26, 0] = config["moles_atm"]*1.0e-20 
-    bounds[26, 1] = config["moles_atm"]*50.0
     bounds[27, 0] = config["moles_melt"]*0.5
     bounds[27, 1] = config["moles_melt"]*2.0
     bounds[28, 0] = config["moles_metal"]*0.5
     bounds[28, 1] = config["moles_metal"]*2.0
+    bounds[26, 0] = config["moles_atm"]*1.0e-20 
+    bounds[26, 1] = config["moles_atm"]*50.0
 
     ## Boundaries on pressure
     bounds[29, 0] = 1.0e-3
-    bounds[29, 1] = 900000
+    bounds[29, 1] = 900000.0
 
     return bounds
 

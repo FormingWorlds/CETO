@@ -83,9 +83,10 @@ def objectivefunction_initial(var, varkeys, config, initial_moles, G, Pstd=1.0):
 
     ## Summing constraint on mole fractions for gas, melt and metal phases
     ## Doing it now 'by hand' to force no rounding errors compared to Young
-    f27 = 1.0 - D["CH4_gas"] - D["H2_gas"] - D["CO2_gas"] - D["CO_gas"] - D["Fe_gas"] - D["H2O_gas"] - D["SiH4_gas"] - D["SiO_gas"] - D["Mg_gas"] - D["Na_gas"] - D["O2_gas"]
-    f28 = 1.0 - D["MgO_melt"] - D["MgSiO3_melt"] - D["SiO2_melt"] - D["FeO_melt"] - D["FeSiO3_melt"] - D["Na2O_melt"] - D["Na2SiO3_melt"] - D["H2O_melt"] - D["CO2_melt"] - D["CO_melt"] - D["H2_melt"]
-    f29 = 1.0 - D["H_metal"] - D["O_metal"] - D["Fe_metal"] - D["Si_metal"]
+
+    f27 = 1.0 - D["MgO_melt"] - D["MgSiO3_melt"] - D["SiO2_melt"] - D["FeO_melt"] - D["FeSiO3_melt"] - D["Na2O_melt"] - D["Na2SiO3_melt"] - D["H2O_melt"] - D["CO2_melt"] - D["CO_melt"] - D["H2_melt"]
+    f28 = 1.0 - D["H_metal"] - D["O_metal"] - D["Fe_metal"] - D["Si_metal"]
+    f29 = 1.0 - D["CH4_gas"] - D["H2_gas"] - D["CO2_gas"] - D["CO_gas"] - D["Fe_gas"] - D["H2O_gas"] - D["SiH4_gas"] - D["SiO_gas"] - D["Mg_gas"] - D["Na_gas"] - D["O2_gas"]
 
     #f27 = 1.0 - np.sum([D[key] for key in D if "_gas" in key and "moles" not in key and "wt" not in key])
     #f28 = 1.0 - np.sum([D[key] for key in D if "_melt" in key and "moles" not in key and "wt" not in key])

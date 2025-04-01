@@ -136,7 +136,7 @@ def get_Gibbs(T):
         elif T[i] >= 1000 and T[i] < 2500:
             G_H2_gas[i] = shomate(T[i], coeff_H2_m)
 
-        elif T[i] >= 2500 and T[i] <= 6000:
+        elif T[i] >= 2500 and T[i] <= 8000:
             G_H2_gas[i] = shomate(T[i], coeff_H2_h)
         i += 1
 
