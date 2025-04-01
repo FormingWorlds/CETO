@@ -143,40 +143,47 @@ theta = np.array([5.08532272e-02, 3.10898511e-01, 1.82280854e-01, 9.94405227e-02
  2.05541488e+03, 6.44191236e+02])
 print(f"Vector theta from self calculation: \n{theta_self}")
 
-# y = np.zeros(len(theta)) # vector y to contain the expected values of equilibrium equations and mass balance
-# for i in range(len(y)):
-#     if i < 19:
-#         if i == 14:
-#             y[i] = -(G[f"R{i+1}"] - ln(1e4 / Pstd))
-#         else:
-#             y[i] = -G[f"R{i+1}"]
+y = np.zeros(len(theta)) # vector y to contain the expected values of equilibrium equations and mass balance
+Pstd = 1.0
+for i in range(len(y)):
+    if i < 19:
+        if i == 14:
+            y[i] = -(G[f"R{i+1}"] - ln(1.0e4 / Pstd))
+        else:
+            y[i] = -G[f"R{i+1}"]
     
-#     elif 19 <= i <= 25:
-#         y[i] = elements_values[(i-19)]
-#     elif i in (26, 27, 28):
-#         y[i] = 1.000
-#     elif i == 29:
-#         y[i] = 0.0
+    elif 19 <= i <= 25:
+        y[i] = elements_values[(i-19)]
+    elif i in (26, 27, 28):
+        y[i] = 1.000
+    elif i == 29:
+        y[i] = 0.0
 
-# print(f"actual model: \n{y}")
+print(f"actual model: \n{y}")
 
-# lnk_err = 0.005    #blanket error on equilibrium reactions
-# moles_err = 0.0001 #blanket error on mole mass balance
-# sum_err = 0.00001  #blanket error on summing equations
-# P_err = 0.1        #fractional error for pressure
-# yerr = np.zeros(len(theta)) # vector yerr to contain blanket uncertainties on model equations
-# for i in range(len(yerr)):
-#     if i < 19:
-#         if i in (13, 16, 18):
-#             yerr[i] = abs(y[i]*(lnk_err / 5.0))
-#         else:
-#             yerr[i] = abs(y[i]*lnk_err)
-#     elif 19 <= i <= 25:
-#         yerr[i] = abs(y[i]*moles_err)
-#     elif i in (26, 27, 28):
-#         yerr[i] = abs(y[i]*sum_err)
-#     elif i == 29:
-#         yerr[i] = P_err 
+
+
+lnk_err = 0.005    #blanket error on equilibrium reactions
+moles_err = 0.0001 #blanket error on mole mass balance
+sum_err = 0.00001  #blanket error on summing equations
+P_err = 0.1        #fractional error for pressure
+yerr = np.zeros(len(theta)) # vector yerr to contain blanket uncertainties on model equations
+for i in range(len(yerr)):
+    if i < 19:
+        if i in (13, 16, 18):
+            yerr[i] = abs(y[i]*(lnk_err / 5.0))
+        else:
+            yerr[i] = abs(y[i]*lnk_err)
+    elif 19 <= i <= 25:
+        yerr[i] = abs(y[i]*moles_err)
+    elif i in (26, 27, 28):
+        yerr[i] = abs(y[i]*sum_err)
+    elif i == 29:
+        yerr[i] = P_err 
+
+print(f"Errors on model: \n {yerr}")
+
+exit()
 
 # data_emcee = (variable_keys, config, moles_initial, G, y, yerr)
 
