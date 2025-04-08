@@ -23,7 +23,6 @@ starttime = time.time()
 ## Reading model input from config file
 sourcedir = Path(__file__).parent
 path_to_config = sourcedir / 'defaultconfig.txt'
-#path_to_config = sourcedir / 'test_lowT.txt'
 
 config = readconfig(path_to_config)
 
@@ -43,7 +42,6 @@ else:
 ## Compute initial moles in system
 elements_keys = ['Si', 'Mg', 'O', 'Fe', 'H', 'Na', 'C']
 elements_values = [moles_in_system(element, config) for element in elements_keys]
-nSi, nMg, nO, nFe, nH, nNa, nC = elements_values
 moles_initial = dict(zip(elements_keys, elements_values))
 
 ## Compute thermodynamics
@@ -58,6 +56,7 @@ for i in range(len(GRT_list)):
     GRT_vals.append(GRT_T)
     GRT_keys.append(f"R{i+1}")
 G = dict(zip(GRT_keys, GRT_vals))
+T_used = T_array[np.argmin(np.abs(T_array - config["T_surface"]))]
 
 ## Initial positions objective function
 variable_keys = ["MgO_melt", "SiO2_melt", "MgSiO3_melt", "FeO_melt", "FeSiO3_melt", "Na2O_melt", "Na2SiO3_melt",
@@ -78,11 +77,6 @@ w_gas = 1.0/np.max(np.abs(F_ini[:19])) # Weight for thermodynamic equations
 
 Value = newobjectivefunction(variables, config, moles_initial, G, w_gas)
 print(f"Initial value of objective function: {Value}")
-
-# theta = deepcopy(variables_initial)
-# y_model = model(theta, variable_keys, config, moles_initial, G)
-# for i in range(len(y_model)):
-#     print(y_model[i])
 
 # Sample objective function over 500 random sets of variables to estimate mean cost of function
 bounds = get_bounds(config)
@@ -120,28 +114,14 @@ sol = dual_annealing(newobjectivefunction,bounds,maxiter=config["niters"],args=(
                      initial_temp=1e18, visit=2.98, maxfun=1e8, seed=42, 
                      accept=-500.0, restart_temp_ratio=1.0e-9)
 
-# sol = dual_annealing(objectivefunction,bounds,maxiter=config["niters"],args=(variable_keys, config, moles_initial, G, w_gas), 
-#                      initial_temp=T_estimate, visit=2.98, maxfun=1e8, seed=user_seed, 
-#                      accept=-500.0, restart_temp_ratio=1.0e-9)
-
 quality = sol.fun / mean_cost
 
 print(sol)
 print("Quality: ", quality)
 
 ## Setting up vectors for MCMC search
-theta_self = sol.x
-
-## Theta array taken directly from Young's code
-theta = np.array([5.08532272e-02, 3.10898511e-01, 1.82280854e-01, 9.94405227e-02,
- 5.28188124e-03, 2.68694569e-05, 5.60674644e-03, 5.68730380e-02,
- 3.14517876e-01, 2.16406471e-04, 2.21736058e-04, 4.81660600e-01,
- 8.70924369e-02, 2.80621197e-01, 2.18468108e-01, 1.41868508e-01,
- 1.72113066e-03, 2.33213897e-02, 1.49574644e-03, 8.57958613e-06,
- 3.66646470e-01, 3.04849063e-03, 1.69431603e-03, 2.49340375e-03,
- 3.35731784e-03, 5.76584565e-01, 1.50468449e+01, 2.98727064e+03,
- 2.05541488e+03, 6.44191236e+02])
-print(f"Vector theta from self calculation: \n{theta_self}")
+theta = sol.x
+print(f"Vector theta: \n{theta}")
 
 y = np.zeros(len(theta)) # vector y to contain the expected values of equilibrium equations and mass balance
 Pstd = 1.0
@@ -161,8 +141,6 @@ for i in range(len(y)):
 
 print(f"actual model: \n{y}")
 
-
-
 lnk_err = 0.005    #blanket error on equilibrium reactions
 moles_err = 0.0001 #blanket error on mole mass balance
 sum_err = 0.00001  #blanket error on summing equations
@@ -181,67 +159,117 @@ for i in range(len(yerr)):
     elif i == 29:
         yerr[i] = P_err 
 
-print(f"Errors on model: \n {yerr}")
+data_emcee = (variable_keys, config, moles_initial, G, y, yerr)
 
-exit()
+y_model = model(theta, variable_keys, config, moles_initial, G, Pstd=Pstd)
 
-# data_emcee = (variable_keys, config, moles_initial, G, y, yerr)
+print(f"Current model: \n{y_model}")
+print(f"Errors on model: \n{yerr}")
 
-# y_model = model(theta, variable_keys, config, moles_initial, G, Pstd=Pstd)
+## MCMC parameters
+n_walkers = 200
+thin = 10
+n_iters_MCMC = 400000
+n_iter_eff = int(n_iters_MCMC / thin)
 
-# print(f"Current model: \n{y_model}")
-# print(f"Errors on model: \n{yerr}")
+walker_p0 = [(theta)+config["offset_MCMC"]*np.random.randn(len(theta)) for i in range(n_walkers)]
 
-# print(f"Likelihood for model (with initial state as test)= \n{lnlikelihood(theta, variable_keys, config, moles_initial, G, y, yerr)}")
-# print(f"ln prob for model: (with initial state as test) \n{lnprob(theta, variable_keys, config, moles_initial, G, y, yerr)}")
+## Run MCMC search
+def runMCMC(walker_p0, n_walkers, n, lnprob, data):
+    ctx = get_context('fork')
+    with Pool(6, context=ctx) as pool:
+        sampler = emcee.EnsembleSampler(n_walkers, n, lnprob, pool=pool, args=data)
+        print("Initial burn in running ... ")
+        pos,_,_ = sampler.run_mcmc(walker_p0, 500)
 
-# exit()
-# ## MCMC parameters
-# n_walkers = 200
-# thin = 10
-# n_iters_MCMC = 1000000
-# n_iter_eff = int(n_iters_MCMC / thin)
+        sampler.reset()
 
-# walker_p0 = [(theta)+config["offset_MCMC"]*np.random.randn(len(theta)) for i in range(n_walkers)]
+        print("Running full MCMC search")
+        pos, prob, state = sampler.run_mcmc(pos, n_iter_eff, skip_initial_state_check=False, progress=True, thin_by=thin)
 
-# ## Run MCMC search
-# def runMCMC(walker_p0, n_walkers, n, lnprob, data):
-#     ctx = get_context('fork')
-#     with Pool(6, context=ctx) as pool:
-#         sampler = emcee.EnsembleSampler(n_walkers, n, lnprob, pool=pool, args=data)
-#         print("Initial burn in running ... ")
-#         pos,_,_ = sampler.run_mcmc(walker_p0, 500)
+    return sampler, pos, prob, state
 
-#         sampler.reset()
+sampler, pos, prob, state = runMCMC(walker_p0, n_walkers, len(variables), lnprob, data_emcee)
+print("MCMC search finished, processing results")
 
-#         print("Running full MCMC search")
-#         pos, prob, state = sampler.run_mcmc(pos, n_iter_eff, skip_initial_state_check=False, progress=True, thin_by=thin)
+samples = sampler.get_chain()
+posteriors = sampler.get_log_prob()
 
-#     return sampler, pos, prob, state
+samples_flat = sampler.flatchain
+posteriors_flat = sampler.flatlnprobability
 
-# sampler, pos, prob, state = runMCMC(walker_p0, n_walkers, len(variables), lnprob, data_emcee)
+MCMCresult = samples_flat[np.argmax(sampler.flatlnprobability)] # set of params theta with greatest posterior probability
+bestfit_model = model(MCMCresult, variable_keys, config, moles_initial, G)
 
-# ## Processing results
-# print("MCMC search finished, processing results")
+## Calculate statistics
+chi2 = sum(((y - bestfit_model)**2) / yerr**2)
+reduced_chi2 = chi2 / (float(71) - float(len(variables_initial))) #taken from Young's code
+mean_af = np.mean(sampler.acceptance_fraction)
+GR = gelman_rubin(samples)
+refinement = MCMCresult - sol.x
 
-# samples = sampler.flatchain
-# posteriors = sampler.flatlnprobability
+print(f"Reduced chi2 of fit: {reduced_chi2}")
 
-# MCMCresult = samples[np.argmax(sampler.flatlnprobability)] # set of params theta with greatest posterior probability
-# bestfit_model = model(MCMCresult, variable_keys, config, moles_initial, G)
+print(f"Mean acceptance fraction: {mean_af}")
 
-# chi2 = sum(((y - bestfit_model)**2) / yerr**2)
-# #reduced_chi2 = chi2 / float(len(variables_initial)) # Chi2 per degrees of freedom (as defined)
-# reduced_chi2 = chi2 / (float(71) - float(len(variables_initial))) #taken from Young's code
+print(f"Gelman-Rubin statistic for each variable (values in the range of 0.9 - 1.1 are acceptable): \n{GR}")
 
-# refinement = MCMCresult - sol.x
+print(f"Absolute difference between dual_annealing and end of MCMC best-fit parameters: \n{refinement}")
 
-# print(f"Reduced chi2 of fit: {reduced_chi2}")
-# print(f"Absolute difference between dual_annealing and end of MCMC best-fit parameters: \n{refinement}")
+## Calculate results
+result = dict(zip(variable_keys, MCMCresult))
 
-# ## Save a .txt file with the best-fit model for analysis; saves us having to re-run the model each time.
-# result_filename = "modelresult_TEST_27_02"
-# np.savetxt(result_filename, bestfit_model)
+# Check mass balance
+final_element_values = [moles_in_system(element, result) for element in elements_keys]
+for i in range(len(final_element_values)):
+    print(f" Initial n{elements_keys[i]}: {elements_values[i]}\n Final n{elements_keys[i]}: {final_element_values[i]}")
+
+# wt% of phase components
+wtpcs = calculate_wtpc(result)
+
+# Oxygen Fugacities
+DIW_apparent = 2.0*log((result["FeO_melt"] + result["FeSiO3_melt"]) / 0.85) #DIW melt for Fe_metal = 0.85
+DIW_actual = 2.0*log((result["FeO_melt"] + result["FeSiO3_melt"]) / result["Fe_metal"])
+
+K_IW = 10.0**(-(G["R11"]/log_to_ln))
+logPO2_IW = log(K_IW**2.0)
+logPO2_atm = log(result["O2_gas"]*result["P_penalty"])
+DIW_atm = logPO2_atm - logPO2_IW
+
+# Planet densities
+gpm_atm, gpm_melt, gpm_metal = gpm_phases(result)
+moles_total = result["moles_atm"] + result["moles_melt"] + result["moles_metal"]
+mass_atm = (result["moles_atm"]/moles_total) * gpm_atm #g
+mass_melt = (result["moles_melt"]/moles_total) * gpm_melt #g
+mass_metal = (result["moles_metal"]/moles_total) * gpm_melt #g
+mass_total = mass_atm + mass_melt + mass_metal
+
+massfrac_atm = mass_atm / mass_total
+massfrac_melt = mass_melt / mass_total
+massfrac_metal = mass_metal / mass_total
+
+density_atm = gpm_atm / (10.0*R_gas*T_used*result["P_penalty"])
+
+density_melt = sum([(result[key]*(molwts[key.replace('_melt','')]/(10.0*molvols[key.replace('_melt','')]))) for \
+                       key in result if '_melt' in key and 'moles' not in key])
+
+density_metal = sum([(result[key]*(molwts[key.replace('_metal','')]/(10.0*molvols[key.replace('_metal','')]))) for \
+                     key in result if '_metal' in key and 'moles' not in key])
+
+density_pureFe = molwts["Fe"]/(10.0*molvols["Fe"])
+
+density_deficit_A = ((density_pureFe - density_metal)/density_pureFe)*100 # in %
+density_deficit_B = (8.7*wtpcs["wt_H_metal"]+1.2*wtpcs["wt_O_metal"]+0.8*["wt_Si_metal"]) # in %; taken from Young's code, evidently 'deficit based on experimental values'
+
+density_planet = (massfrac_metal*density_metal) + (massfrac_melt*density_melt) + (massfrac_atm*density_atm) #g/cc
+
+# Nominal atmospheric pressure
+fratio = massfrac_atm/(1.0 - massfrac_atm)
+nominal_pressure = 1.2e6*fratio*(config["M_p"])**(2.0/3.0)
+
+
+
+
 
 endtime = time.time()
 print(f"Script concluded in {endtime-starttime} s")

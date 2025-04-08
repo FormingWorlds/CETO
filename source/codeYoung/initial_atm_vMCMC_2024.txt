@@ -66,6 +66,6 @@
 1.0 #weight for f28: metal mole fraction sum 
 1.0 #weight for f29: atmosphere mole fraction sum 
 0 #integer seed, if 0 then seed is chosen randomly  36 
-2000 #of iterations at each temperature 20000 
+20000 #of iterations at each temperature 20000 
 1.0e-06  #Offset in random positions of MCMC walkers, e.g. 1e-7 for xB or 1e-9 for xH2O 
 6000.0 # Core-mantle equilibration temperature 

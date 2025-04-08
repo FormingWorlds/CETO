@@ -2239,9 +2239,6 @@ print('')
 print('y(errs) = \n ',yerr)
 print('')
 
-exit()
-
-
 #--------------------------------------------------------------------------------------------------------
 # Our model function
 def model(theta):
@@ -2402,11 +2399,11 @@ print('yerr(errors for model)= \n ',yerr)
 print('')
 
 # INPUT MCMC PARAMETERS: Set number of independent Markov chain walkers and iterations
-nwalkers=150 #100
+nwalkers=200 #100
 
 # Utilize thin for emcee to return every thin'th sample, add thin_by=thin to smapler.run_mcmc options
 thin=10
-niter=1000000 #2000000 works
+niter=500000 #2000000 works
 niter_eff = int(niter/thin) # emcee does niter*thin iteractions, so correct for this to save time if using thin
         
 # p0 is the array of initial positions for each walker, i.e., each separate
@@ -2545,6 +2542,9 @@ print('')
 refinement=result-soln.x
 print('')
 print('Differences in model parameters =',refinement)
+
+print(f"Young code result: \n {result}")
+exit()
 
 grams_per_mole_silicate=0.000
 for i in range(0,11):

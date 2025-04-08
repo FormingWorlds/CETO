@@ -270,6 +270,44 @@ def gelman_rubin(samples):
         statistics[i] = R
     return statistics
 
+def calculate_wtpc(D):
+    """Computes wt% (mass fractions) relative to the total mass of melt, atmosphere or metal phase for each 
+       phase component using mole fractions and total amount of moles in each phase from input dictionary, and
+       molecular weights of relevant components.
+       Parameters:
+       D (dict)             : Dictionary containing mole fractions of phase components and total moles in gas,
+                            melt and metal phases.
+       Returns:
+       result (dict)        : Dictionary containing mass fractions of all phase components, indexed as 
+                            wt_{species}_{phase}, eg. wt_MgO_melt or wt_H2O_gas"""
+    gpm_gas, gpm_melt, gpm_metal = gpm_phases(D)
+    M_gas = gpm_gas*D["moles_atm"]
+    M_melt = gpm_melt*D["moles_melt"]
+    M_metal = gpm_metal*D["moles_metal"]
+    
+    result = {}
+    
+    for key in D:
+        if '_melt' in key and 'moles' not in key:
+            speciesname = key.replace('_melt','')
+            moles_species = D["moles_melt"]*D[key]
+            mass_species = molwts[speciesname]*moles_species
+            result[f"wt_{key}"] = (mass_species / M_melt)*100
+        elif '_gas' in key and 'moles' not in key:
+            speciesname = key.replace('_gas','')
+            moles_species = D["moles_atm"]*D[key]
+            mass_species = molwts[speciesname]*moles_species
+            result[f"wt_{key}"] = (mass_species / M_gas)*100
+        elif '_metal' in key and 'moles' not in key:
+            speciesname = key.replace('_metal','')
+            moles_species = D["moles_metal"]*D[key]
+            mass_species = molwts[speciesname]*moles_species
+            result[f"wt_{key}"] = (mass_species / M_metal)*100
+        else:
+            pass
+        
+    return result
+
 
 
 

@@ -78,7 +78,7 @@
 
 ## Miscellaneous
 42         # Seed for random generators; if zero then seed will be chosen randomly (integer)
-2000      # Number of iterations at each temperature for dual annealing (integer)
+20000      # Number of iterations at each temperature for dual annealing (integer)
 1.0e-06   # Offset in random positions of MCMC walkers (float)
 
 ## Global Parameters (Bool)
