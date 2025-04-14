@@ -9,6 +9,9 @@ import numpy as np
 from numpy import log as ln
 from numpy import log10 as log
 from numpy import exp as exp
+import logging
+
+logger = logging.getLogger(__name__)
 
 def shomate(T, coeff):
     """Computes the specific enthalpy and entropy of a species at temperatures T and 1 bar of pressure via
@@ -201,6 +204,9 @@ def get_Gibbs(T):
         "G_SiH4_gas" : G_SiH4_gas
     }
 
+    for key in G_dict:
+        logging.debug(f"Thermodynamics.py/get_Gibbs(): {key} at T = {T[0]}: {G_dict[key][0]}")
+
     return G_dict
 
 def calculate_GRT(T):
@@ -291,4 +297,5 @@ def calculate_GRT(T):
     for i in range(len(G_list)):
         GRT_i = G_list[i] / (R_gas*T)
         GRT_list.append(GRT_i)
+
     return np.array(GRT_list)

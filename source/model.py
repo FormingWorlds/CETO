@@ -2,6 +2,7 @@ from __future__ import annotations
 import numpy as np
 from numpy import log as ln
 import math
+import logging
 
 try:
     from thermodynamics import calculate_GRT
@@ -12,6 +13,7 @@ except:
     from source.utilities import *
     from source.activity import get_activity
 
+logger = logging.getLogger(__name__)
 
 def objectivefunction_initial(var, varkeys, config, initial_moles, G, Pstd=1.0):
     """Function establishes and computes initial values of 29 equations in 29 variables, taken from input file D. The first 19 reactions are equilibrium reactions for the 19 basis reactions of the model.
@@ -32,10 +34,12 @@ def objectivefunction_initial(var, varkeys, config, initial_moles, G, Pstd=1.0):
 
     ## Surface pressure
     P = D["P_penalty"]
+    logging.debug(f"model.py/objectivefunction_initial(): Surface pressure P = {P}")
     #P = calculate_pressure(D, config)
     
     ## Get activities for Si, O, H2, H2O in melt phase, H in metal phase.
     lngSi, lngO, lngH2, lngH2O_melt, lngH_metal, xB = get_activity(D, config)
+    logging.debug(f"model.py/objectivefunction_initial(): activities:\n lngSi = {lngSi}\n lngO = {lngO}\n lngH2 = {lngH2}\n lngH2O_melt = {lngH2O_melt}\n lngH_metal = {lngH_metal}\n xB = {xB}")
 
     ## Equilibrium equations for reactions R1 - R19
     f1 = ln(D["Na2O_melt"]) + ln(D["SiO2_melt"]) - ln(D["Na2SiO3_melt"]) + G["R1"]
@@ -90,11 +94,14 @@ def objectivefunction_initial(var, varkeys, config, initial_moles, G, Pstd=1.0):
 
     #f27 = 1.0 - np.sum([D[key] for key in D if "_gas" in key and "moles" not in key and "wt" not in key])
     #f28 = 1.0 - np.sum([D[key] for key in D if "_melt" in key and "moles" not in key and "wt" not in key])
-    #f29 = 1.0 - np.sum([D[key] for key in D if "_metal" in key and "moles" not in key and "wt" not in key and "bool" not in key])
+    #f29 = 1.0 - np.sum([D[key] for key in D if "_metal" in key and "moles" not in key and "wt" not in key and "bool" not in key]
 
     F_initial = np.array([f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, 
              f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29])
     
+    for i in range(len(F_initial)):
+        logging.debug(f"model.py/objectivefunction_initial(): f{i+1} = {F_initial[i]}")
+
     return F_initial
 
 def objectivefunction(var, varkeys, config, initial_moles, G, w_gas, Pstd=1.0):
@@ -113,6 +120,8 @@ def objectivefunction(var, varkeys, config, initial_moles, G, w_gas, Pstd=1.0):
        Returns: 
         sum (float)                  : Sum of squared errors"""
     D = dict(zip(varkeys, var))
+
+    logging.debug(f"model.py/objectivefunction(): w_gas = {w_gas}")
 
     wt_massbalance = w_gas*config["wt_massbalance"]
     wt_summing = w_gas*config["wt_summing"]
@@ -150,6 +159,8 @@ def objectivefunction(var, varkeys, config, initial_moles, G, w_gas, Pstd=1.0):
     F_list.append(P)
 
     F_unpenalized = np.array(F_list) #convert to array before applying penalties
+    for i in range(len(F_unpenalized)):
+        logging.debug(f"model.py/objectivefunction()): unpenalized f{i+1} = {F_unpenalized[i]}")
 
     ## Assign penalties
     F = np.zeros(30)
@@ -158,8 +169,12 @@ def objectivefunction(var, varkeys, config, initial_moles, G, w_gas, Pstd=1.0):
     F[26:29] = sigmoidal_penalty(F_unpenalized[26:29], 0, 1, 0.005, 100000) #value=0, sharpness=1, tolerance=0.005, magnitude=100,000
     F[29] = sigmoidal_penalty(F_unpenalized[29], 0, 1, 0.2, config["P_penalty"]) #value=0, sharpness=1, tolerance=0.2, take magnitude from input
 
+    for i in range(len(F)):
+        logging.debug(f"model.py/objectivefunction()): unpenalized f{i+1} = {F[i]}")
+
     ## Sum of squared errors in F
     sum = np.sum((F**2))
+    logging.debug(f"model.py/objectivefunction(): sum of squared Fs: {sum}")
     return sum
 
 def model(theta, thetakeys, config, initial_moles, G, Pstd=1.0):

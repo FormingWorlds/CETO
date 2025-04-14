@@ -4,12 +4,15 @@ from numpy import log as ln
 from numpy import log10 as log
 
 from pathlib import Path
+import logging
 
 
 try:
     from constants import *
 except:
     from source.constants import *
+
+logger = logging.getLogger(__name__)
 
 def readconfig(path):
     """"Reads model config file (.txt) and converts input into dictionary for easy handling.
@@ -94,6 +97,10 @@ def moles_in_system(el, D):
                         el_ingas += float(coeff)*D[key]
                     else:
                         pass
+    logging.debug(f"utilities.py/moles_in_system(): moles {el} in melt = {el_inmelt}")
+    logging.debug(f"utilities.py/moles_in_system(): moles {el} in gas = {el_ingas}")
+    logging.debug(f"utilities.py/moles_in_system(): moles {el} in metal = {el_inmetal}")
+
 
     return D["moles_melt"]*el_inmelt + D["moles_metal"]*el_inmetal + D["moles_atm"]*el_ingas
 
@@ -307,6 +314,29 @@ def calculate_wtpc(D):
             pass
         
     return result
+
+def copy_config(path_inputfile, path_outputfile):
+    """Copies the input configuration file of the model onto the end of the output file, for reference.
+       Parameters:
+       path_inputfile (str)         : absolute path to model config file
+       path_outputfile (str)        : absolute path to model output file
+       
+       Returns: 
+       none                         : Function copies given inputfile into given outputfile."""
+    config = open(path_inputfile, 'r')
+    Lines = config.readlines()
+    count = len(Lines)
+    config.close()
+
+    outfile = open(path_outputfile, 'a+')
+    outfile.write("\n # CONFIG FILE: \n")
+    tick = 3 #skips the config header
+    while tick < count:
+        Newline = Lines[tick].strip('\n')
+        outfile.write("%s \n" %Newline)
+        tick += 1
+    outfile.close()
+
 
 
 
