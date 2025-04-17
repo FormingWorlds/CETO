@@ -1,3 +1,5 @@
+#!/dataserver/users/formingworlds/lania/mscthesis/venv/bin/python
+
 ## Package Imports
 import numpy as np
 import numpy.testing as npt
@@ -22,9 +24,19 @@ from model import *
 from utilities import *
 from newmodel import *
 
+parser = argparse.ArgumentParser("Argument parser for testscript.py")
+parser.add_argument("-input", required=True, default="defaultconfig.txt")
+parser.add_argument("--logname", nargs='?', default='lania.log')
+parser.add_argument("--runID",nargs='?', default="lania")
+args = parser.parse_args()
+
+inputfile = args.input
+logname = args.logname
+runID = args.runID
+
 ## Creating logging instance
 logger = logging.getLogger(__name__)
-logging.basicConfig(filename='lania.log', filemode='w', encoding='utf-8', level=logging.INFO, 
+logging.basicConfig(filename=logname, filemode='w', encoding='utf-8', level=logging.INFO, 
                     format='%(levelname)s %(asctime)s %(message)s', datefmt='%d/%m/%Y %H:%M:%S', force=True)
 
 logging.info("Starting model run")
@@ -33,7 +45,7 @@ starttime = time.time()
 
 ## Reading model input from config file
 sourcedir = Path(__file__).parent
-path_to_config = sourcedir / 'defaultconfig.txt'
+path_to_config = sourcedir / inputfile
 
 logging.info(f"Attempting to read config file: {path_to_config}")
 
@@ -105,7 +117,7 @@ random_variables = np.zeros(len(variables))
 for i in range(n_iters):
     for j in range(len(variables)):
         random_variables[j] = rng_random.uniform(bounds[j,0], bounds[j,1])
-    costs[i] = newobjectivefunction(random_variables, config, moles_initial, G, w_gas)
+    costs[i] = objectivefunction(random_variables, variable_keys, config, moles_initial, G, w_gas)
 try:
     cost_smoothed = smoothTriangle(costs, 5)
 except:
@@ -129,8 +141,8 @@ T_estimate = -std_cost / ln(0.98)
 logging.info(f"Estimated initial search T (by -std_cost / ln(0.98) = {T_estimate})")
 
 time_start_dual_annealing = time.time()
-sol = dual_annealing(newobjectivefunction,bounds,maxiter=config["niters"],args=(config, moles_initial, G, w_gas), 
-                     initial_temp=1e18, visit=2.98, maxfun=1e8, seed=42, 
+sol = dual_annealing(objectivefunction,bounds,maxiter=config['niters'],args=(variable_keys, config, moles_initial, G, w_gas), 
+                     initial_temp=1e18, visit=2.98, maxfun=1e8, seed=randomseed, 
                      accept=-500.0, restart_temp_ratio=1.0e-9)
 
 quality = sol.fun / mean_cost
@@ -198,7 +210,7 @@ time_start_MCMC = time.time()
 
 n_walkers = 200
 thin = 10
-n_iters_MCMC = 40000
+n_iters_MCMC = 500000
 n_iter_eff = int(n_iters_MCMC / thin)
 
 walker_p0 = [(theta)+config["offset_MCMC"]*np.random.randn(len(theta)) for i in range(n_walkers)]
@@ -320,7 +332,7 @@ sum_atm = 1.0 - np.sum([result[key] for key in result if '_gas' in key and 'mole
 
 
 ## Writing results to outputfile
-outputname = 'Laniamodel_output_summary.txt'
+outputname = f'{runID}_output_summary.txt'
 outfile = open(outputname, 'w')
 
 outfile.write("%10.5f " %reduced_chi2); outfile.write(" # Reduced chi-squre of fit\n")
@@ -375,7 +387,7 @@ outfile.close()
 path_to_output = sourcedir / outputname
 copy_config(path_to_config, path_to_output)
 
-if n_iters_MCMC >= 100000:
+if n_iters_MCMC >= 300000:
     try:
         time_start_cornerplot = time.time()
         ## Creating Corner Plot
@@ -383,9 +395,9 @@ if n_iters_MCMC >= 100000:
                 'H2O melt' 'CO melt', 'CO2 melt', 'Fe metal', 'Si metal', 'O metal', 'H metal', 'H2 gas', 'CO gas', 'CO2 gas',
                 'CH4 gas', 'O2 gas', 'H2O gas', 'Fe gas', 'Mg gas', 'SiO gas', 'Na gas', 'SiH4 gas', '#M atm', '#M melt',
                 '#M metal', "P"]
-        figure = corner.corner(samples_flat[:,:], show_titles=True, labels=plotlabels, plot_datapoints=False)
+        figure = corner.corner(samples_flat[250000:,:], show_titles=True, labels=plotlabels, plot_datapoints=True)
         plt.show()
-        figure.savefig(f"laniamodel_corner_all.png")
+        figure.savefig(f"{runID}_corner_all.png")
         plt.close()
 
         time_end_cornerplot = time.time()
