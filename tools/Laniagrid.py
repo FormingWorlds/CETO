@@ -19,6 +19,7 @@ parser.add_argument('-outputdir', required=True)
 parser.add_argument('--logfile',nargs='?',default='Laniagrid.log')
 parser.add_argument('--loglevel',nargs='?',default='INFO')
 parser.add_argument('--runcounts',nargs='+',default=None)
+parser.add_argument('--doplots',nargs='?',default=True)
 args = parser.parse_args()
 
 configpath = args.config
@@ -26,6 +27,7 @@ outputdir = args.outputdir
 loglevel = args.loglevel
 logname = args.logfile
 runcounts = args.runcounts
+doplots = args.doplots
 
 try:
     parentdir = Path(__file__).parent.parent
@@ -138,11 +140,11 @@ for i in range(len(arr_moles_atm)):
                     logging.info(f"Running Lania model over {configname}")
 
                     ## Run the model!
-                    runID = f"Lania_run{count}"
-                    run_logname = f"Lania_run{count}.log"
-                    subprocess.run(["","-input",abspath_newconfig,"--logname",run_logname,"--runID",runID], executable=abspath_model)
+                    runID = f"L_run{count}"
+                    run_logname = f"L_run{count}.log"
+                    subprocess.run(["","-input",abspath_newconfig,"--logname",run_logname,"--runID",runID,"--doplots",doplots], executable=abspath_model)
 
-                    time.sleep(3.0)
+                    time.sleep(1.0)
                     logging.info("Finished running model. Summary: \n")
 
                     ## Perform checks on model output
@@ -205,6 +207,21 @@ for i in range(len(arr_moles_atm)):
                     os.mkdir(rundirectory)
                     logging.info(f"Created directory {rundirectory}")
 
+                    plotsdirectory = Path(f"{outputdir}/run{count}/plots")
+                    os.mkdir(plotsdirectory)
+                    logging.info(f"Created directory {plotsdirectory}")
+
+                    if doplots == 'True' or doplots == 'true':
+                        catchall_hists = f'{runID}_*_hist.png' #wildcard character to take all histograms
+                        try:
+                            subprocess.run([f'mv {catchall_hists} {plotsdirectory}'], shell=True)
+                            logging.info(f"Moved histograms to {plotsdirectory}")
+                        except:
+                            logging.warning(f"Could not move histograms to {plotsdirectory}")
+                    else:
+                        logging.info("No histograms were created.")
+
+
                     try:
                         subprocess.run([f'mv {configname} {rundirectory}'], shell=True)
                         logging.info(f"Moved {configname} to {rundirectory}")
@@ -218,10 +235,10 @@ for i in range(len(arr_moles_atm)):
                         logging.warning(f"Could not move {outputfile} to {rundirectory}")
 
                     try:
-                        subprocess.run([f'mv {cornerplot} {rundirectory}'], shell=True)
-                        logging.info(f"Moved {cornerplot} to {rundirectory}")
+                        subprocess.run([f'mv {cornerplot} {plotsdirectory}'], shell=True)
+                        logging.info(f"Moved {cornerplot} to {plotsdirectory}")
                     except:
-                        logging.warning(f"Could not move {cornerplot} to {rundirectory}")
+                        logging.warning(f"Could not move {cornerplot} to {plotsdirectory}")
 
                     try:
                         subprocess.run([f'mv {run_logname} {rundirectory}'], shell=True)

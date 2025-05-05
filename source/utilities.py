@@ -337,6 +337,118 @@ def copy_config(path_inputfile, path_outputfile):
         tick += 1
     outfile.close()
 
+    ## Functions added for uncertainty propagation
+def gpm_phases_uncertainties(D, errD=None):
+    """Computes gram per mole of phase for atmosphere, silicate melt and metal core via species
+       molecular weights.
+       Parameters:
+       D (dict)             : Dictionary containing model input, retrieves mole fractions of species
+                            in the three respective phases.
+       errD (dict or None)  : Dictionary containing uncertainties on corresponding values in D. Default is None,
+                            in which case function will return all uncertainties as being zero.
+       Returns:
+       gpm_gas (list)      : containing total number of grams per mole of atmosphere and uncertainty
+       gpm_melt (list)     : containing total number of grams per mole of silicate mantle and uncertainty
+       gpm_metal (list)    : containing total number of grams per mole of metal core and uncertainty."""
+    if errD == None:
+        keys = list(D.keys())
+        nulls = np.zeros(len(keys))
+        errD = dict(zip(keys, nulls))
+    
+    
+    gpm_gas = 0.0
+    err_gpm_gas = 0.0
+    
+    gpm_melt = 0.0
+    err_gpm_melt = 0.0
+    
+    gpm_metal = 0.0
+    err_gpm_metal = 0.0
+    
+    for key in D:
+        if "_gas" in key and 'moles' not in key and 'wt' not in key:
+            speciesname = key.replace('_gas','')
+            gpm_gas += D[key]*molwts[speciesname]
+            err_gpm_gas += molwts[speciesname]**2 * (errD[key]**2)
+        elif "_melt" in key and 'moles' not in key and 'wt' not in key:
+            speciesname = key.replace('_melt','')
+            gpm_melt += D[key]*molwts[speciesname]
+            err_gpm_melt += molwts[speciesname]**2 * errD[key]**2
+        elif "_metal" in key and 'moles' not in key and 'wt' not in key and 'bool' not in key:
+            speciesname = key.replace('_metal','')
+            gpm_metal += D[key]*molwts[speciesname]
+            err_gpm_metal += molwts[speciesname]**2 * errD[key]**2
+        else:
+            pass
+    return [gpm_gas, err_gpm_gas**0.5], [gpm_melt, err_gpm_melt**0.5], [gpm_metal, err_gpm_metal**0.5]
+
+def calculate_wtpc_uncertainties(D, errD=None):
+    """Computes wt% (mass fractions) relative to the total mass of melt, atmosphere or metal phase for each 
+       phase component using mole fractions and total amount of moles in each phase from input dictionary, and
+       molecular weights of relevant components. If dictionary containing corresponding uncertainties errD is provided,
+       function will return nonzero uncertainties.
+       Parameters:
+       D (dict)             : Dictionary containing mole fractions of phase components and total moles in gas,
+                            melt and metal phases.
+       errD (dict)          : Dictionary containing corresponding uncertainties on values in D
+
+       Returns:
+       result (dict)        : Dictionary containing lists with mass fractions of all phase components, indexed as 
+                            wt_{species}_{phase}, eg. wt_MgO_melt or wt_H2O_gas. First entry is value, second is uncertainty."""
+    gpm_gas, gpm_melt, gpm_metal = gpm_phases_uncertainties(D, errD)
+    
+    if errD == None:
+        keys = list(D.keys())
+        nulls = np.zeros(len(keys))
+        errD = dict(zip(keys, nulls))
+        
+    M_gas = gpm_gas[0]*D["moles_atm"]
+    err_M_gas = M_gas*np.sqrt((gpm_gas[1]/gpm_gas[0])**2 + (errD["moles_atm"]/D["moles_atm"])**2)
+    
+    M_melt = gpm_melt[0]*D["moles_melt"]
+    err_M_melt = M_melt*np.sqrt((gpm_melt[1]/gpm_melt[0])**2 + (errD["moles_melt"]/D["moles_melt"])**2)
+    
+    M_metal = gpm_metal[0]*D["moles_metal"]
+    err_M_metal = M_metal*np.sqrt((gpm_metal[1]/gpm_metal[0])**2 + (errD["moles_metal"]/D["moles_metal"])**2)
+    
+    result = {}
+    
+    for key in D:
+        if '_melt' in key and 'moles' not in key:
+            speciesname = key.replace('_melt','')
+            moles_species = D["moles_melt"]*D[key]
+            err_moles_species = moles_species*np.sqrt((errD["moles_melt"]/D["moles_melt"])**2 + (errD[key]/D[key])**2)
+            mass_species = molwts[speciesname]*moles_species
+            err_mass_species = np.abs(molwts[speciesname])*err_moles_species
+            r = (mass_species / M_melt)*100
+            err_r = r*np.sqrt((err_mass_species/mass_species)**2 + (err_M_melt/M_melt)**2)
+            result[f"wt_{key}"] = [r, err_r]
+            
+            
+        elif '_gas' in key and 'moles' not in key:
+            speciesname = key.replace('_gas','')
+            moles_species = D["moles_atm"]*D[key]
+            err_moles_species = moles_species*np.sqrt((errD["moles_atm"]/D["moles_atm"])**2 + (errD[key]/D[key])**2)
+            mass_species = molwts[speciesname]*moles_species
+            err_mass_species = np.abs(molwts[speciesname])*err_moles_species
+            r = (mass_species / M_gas)*100
+            err_r = r*np.sqrt((err_mass_species/mass_species)**2 + (err_M_gas/M_gas)**2)
+            result[f"wt_{key}"] = [r, err_r]
+            
+        elif '_metal' in key and 'moles' not in key:
+            speciesname = key.replace('_metal','')
+            moles_species = D["moles_metal"]*D[key]
+            err_moles_species = moles_species*np.sqrt((errD["moles_metal"]/D["moles_metal"])**2 + (errD[key]/D[key])**2)
+            mass_species = molwts[speciesname]*moles_species
+            err_mass_species = np.abs(molwts[speciesname])*err_moles_species
+            r = (mass_species / M_metal)*100
+            err_r = r*np.sqrt((err_mass_species/mass_species)**2 + (err_M_metal/M_metal)**2)
+            result[f"wt_{key}"] = [r, err_r]
+            
+        else:
+            pass
+        
+    return result
 
 
 
