@@ -75,6 +75,9 @@ elements_keys = ['Si', 'Mg', 'O', 'Fe', 'H', 'Na', 'C']
 elements_values = [moles_in_system(element, config) for element in elements_keys]
 moles_initial = dict(zip(elements_keys, elements_values))
 
+print("Check!", moles_initial)
+exit()
+
 ## Compute thermodynamics
 T_array  = np.linspace(1000.0, config["T_eq"], 200)
 GRT_list = calculate_GRT(T_array)
@@ -246,6 +249,9 @@ posteriors_flat = sampler.flatlnprobability
 
 MCMCresult = samples_flat[np.argmax(sampler.flatlnprobability)] # set of params theta with greatest posterior probability
 bestfit_model = model(MCMCresult, variable_keys, config, moles_initial, G)
+
+logging.info(f"Samples size: {np.shape(samples)}")
+logging.info(f"Flattened sample size: {np.shape(samples_flat)}")
 
 ## Calculate statistics
 chi2 = sum(((y - bestfit_model)**2) / yerr**2)
