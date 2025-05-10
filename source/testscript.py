@@ -75,9 +75,6 @@ elements_keys = ['Si', 'Mg', 'O', 'Fe', 'H', 'Na', 'C']
 elements_values = [moles_in_system(element, config) for element in elements_keys]
 moles_initial = dict(zip(elements_keys, elements_values))
 
-print("Check!", moles_initial)
-exit()
-
 ## Compute thermodynamics
 T_array  = np.linspace(1000.0, config["T_eq"], 200)
 GRT_list = calculate_GRT(T_array)
@@ -181,7 +178,7 @@ for i in range(len(y)):
 logging.info(f"Expected values of equilibrium equations and mass balance: \n{y}")
 
 lnk_err = 0.005    #blanket error on equilibrium reactions
-moles_err = 0.0001 #blanket error on mole mass balance
+moles_err = 0.001 #blanket error on mole mass balance
 sum_err = 0.00001  #blanket error on summing equations
 P_err = 0.1        #fractional error for pressure
 yerr = np.zeros(len(theta)) # vector yerr to contain blanket uncertainties on model equations
@@ -215,7 +212,7 @@ time_start_MCMC = time.time()
 
 n_walkers = 200
 thin = 10
-n_iters_MCMC = 7500
+n_iters_MCMC = 300000
 n_iter_eff = int(n_iters_MCMC / thin)
 
 walker_p0 = [(theta)+config["offset_MCMC"]*np.random.randn(len(theta)) for i in range(n_walkers)]
@@ -527,25 +524,28 @@ outfile.close()
 path_to_output = outputname
 copy_config(path_to_config, path_to_output)
 
-if n_iters_MCMC >= 300000:
-    try:
-        time_start_cornerplot = time.time()
-        ## Creating Corner Plot
-        plotlabels = ['MgO melt', 'SiO2 melt', 'MgSiO3 melt', 'FeO melt', 'FeSiO3 melt', 'Na2O melt', 'Na2SiO3 melt', 'H2 melt',
-                'H2O melt' 'CO melt', 'CO2 melt', 'Fe metal', 'Si metal', 'O metal', 'H metal', 'H2 gas', 'CO gas', 'CO2 gas',
-                'CH4 gas', 'O2 gas', 'H2O gas', 'Fe gas', 'Mg gas', 'SiO gas', 'Na gas', 'SiH4 gas', '#M atm', '#M melt',
-                '#M metal', "P"]
-        figure = corner.corner(samples_flat[:,:])
-        plt.show()
-        figure.savefig(f"{runID}_corner_all.png")
-        plt.close()
+# if n_iters_MCMC >= 300000:
+#     try:
+#         time_start_cornerplot = time.time()
+#         ## Creating Corner Plot
+#         plotlabels = ['MgO melt', 'SiO2 melt', 'MgSiO3 melt', 'FeO melt', 'FeSiO3 melt', 'Na2O melt', 'Na2SiO3 melt', 'H2 melt',
+#                 'H2O melt' 'CO melt', 'CO2 melt', 'Fe metal', 'Si metal', 'O metal', 'H metal', 'H2 gas', 'CO gas', 'CO2 gas',
+#                 'CH4 gas', 'O2 gas', 'H2O gas', 'Fe gas', 'Mg gas', 'SiO gas', 'Na gas', 'SiH4 gas', '#M atm', '#M melt',
+#                 '#M metal', "P"]
+#         try:
+#             figure = corner.corner(samples_flat, labels=plotlabels)
+#             plt.show()
+#             figure.savefig(f"{runID}_corner_all.png")
+#             plt.close()
+#         except:
+#             logging.warning("Cornerplot could not be created.")
 
-        time_end_cornerplot = time.time()
-    except:
-        logging.warning("Corner plot could not be made due to insufficient datapoints.")
-        print("Corner plot could not be made due to insufficient amount of datapoints.")
-else:
-    logging.info("Number of MCMC iterations insufficient to create valid contours in cornerplot.")
+#         time_end_cornerplot = time.time()
+#     except:
+#         logging.warning("Corner plot could not be made due to insufficient datapoints.")
+#         print("Corner plot could not be made due to insufficient amount of datapoints.")
+# else:
+#     logging.info("Number of MCMC iterations insufficient to create valid contours in cornerplot.")
 
 endtime = time.time()
 
@@ -558,12 +558,12 @@ logging.info(f"   Runtime Simulated Annealing: {runtime_DA} s")
 logging.info(f"   Runtime MCMC search: {runtime_MCMC} s")
 
 
-try:
-    runtime_corner = time_end_cornerplot - time_start_cornerplot
-    logging.info(f"   Runtime cornerplot: {runtime_corner}")
-except:
-    logging.warning("No runtime of cornerplot calculated")
-    print("Runtime of plotting not calculated.")
+# try:
+#     runtime_corner = time_end_cornerplot - time_start_cornerplot
+#     logging.info(f"   Runtime cornerplot: {runtime_corner}")
+# except:
+#     logging.warning("No runtime of cornerplot calculated")
+#     print("Runtime of plotting not calculated.")
 
 with open(outputname, 'a') as file:
     file.write("\n")
@@ -575,10 +575,10 @@ with open(outputname, 'a') as file:
     file.write(f'\n{runtime_total} # Total runtime in s\n')
     file.write(f'{runtime_DA} # Runtime for Dual Annealing search in s \n')
     file.write(f'{runtime_MCMC} # Runtime for MCMC search in s\n')
-    try:
-        file.write(f'{runtime_corner} # Runtime for creating cornerplot in s\n')
-    except:
-        file.write(f'{0} # Runtime for creating cornerplot in s\n')
+    # try:
+    #     file.write(f'{runtime_corner} # Runtime for creating cornerplot in s\n')
+    # except:
+    #     file.write(f'{0} # Runtime for creating cornerplot in s\n')
 
 logging.info("\n   END   \n")
 print(f"\nEnd.\n")
