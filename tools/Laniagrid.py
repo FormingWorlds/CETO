@@ -31,7 +31,7 @@ doplots = args.doplots
 
 try:
     parentdir = Path(__file__).parent.parent
-    abspath_model = Path(parentdir / 'source/testscript.py').resolve(strict=True)
+    abspath_model = Path(parentdir / 'source/mainscript.py').resolve(strict=True)
 except:
     print(f"CRITICAL: Could not establish path to model scripts")
     exit()
@@ -76,7 +76,7 @@ variables = ["T_surface", "T_eq", "moles_atm", "moles_metal"]
 arr_T_surface = np.array([1000.0, 2000.0, 3000.0, 4000.0, 5000.0])
 arr_dT_eq = np.array([1000.0, 2000.0, 3000.0])
 arr_moles_atm = np.array([1400.0, 7000.0, 14600.0, 32900.0])
-arr_moles_metal = np.array([0, 1, 2, 3])
+arr_moles_metal = np.array([1.0, 200.0, 1250.0, 3800.0])
 
 logging.info(f"Grid search over the following parameters: \n {variables[0]} : {arr_T_surface}\
              \n {variables[1]} : {arr_dT_eq}\n {variables[2]} : {arr_moles_atm}\n {variables[3]} : {arr_moles_metal}")
@@ -149,7 +149,7 @@ for h in range(len(arr_moles_metal)):
                         run_logname = f"L_run{count}.log"
                         subprocess.run(["","-input",abspath_newconfig,"--logname",run_logname,"--runID",runID,"--doplots",doplots], executable=abspath_model)
 
-                        time.sleep(1.0)
+                        time.sleep(3.0)
                         logging.info("Finished running model. Summary: \n")
 
                         ## Perform checks on model output
@@ -205,6 +205,8 @@ for h in range(len(arr_moles_metal)):
                             
                         ## Move the results to output directory
 
+                        time.sleep(3.0)
+
                         outputfile = f'{runID}_output_summary.txt'
                         cornerplot = f'{runID}_corner_all.png'
 
@@ -239,11 +241,11 @@ for h in range(len(arr_moles_metal)):
                         except:
                             logging.warning(f"Could not move {outputfile} to {rundirectory}")
 
-                        try:
-                            subprocess.run([f'mv {cornerplot} {plotsdirectory}'], shell=True)
-                            logging.info(f"Moved {cornerplot} to {plotsdirectory}")
-                        except:
-                            logging.warning(f"Could not move {cornerplot} to {plotsdirectory}")
+                        # try:
+                        #     subprocess.run([f'mv {cornerplot} {plotsdirectory}'], shell=True)
+                        #     logging.info(f"Moved {cornerplot} to {plotsdirectory}")
+                        # except:
+                        #     logging.warning(f"Could not move {cornerplot} to {plotsdirectory}")
 
                         try:
                             subprocess.run([f'mv {run_logname} {rundirectory}'], shell=True)
