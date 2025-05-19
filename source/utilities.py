@@ -347,9 +347,8 @@ def gpm_phases_uncertainties(D, errD=None):
        errD (dict or None)  : Dictionary containing uncertainties on corresponding values in D. Default is None,
                             in which case function will return all uncertainties as being zero.
        Returns:
-       gpm_gas (list)      : containing total number of grams per mole of atmosphere and uncertainty
-       gpm_melt (list)     : containing total number of grams per mole of silicate mantle and uncertainty
-       gpm_metal (list)    : containing total number of grams per mole of metal core and uncertainty."""
+       gpm_of_phases (list) : containing grams per mole of atmosphere, melt and metal.
+       err_gpm_phases (list): containing uncertainties on corresponding values in gpm_of_phases. Returned only if errD is not None."""
     if errD == None:
         keys = list(D.keys())
         nulls = np.zeros(len(keys))
@@ -380,7 +379,14 @@ def gpm_phases_uncertainties(D, errD=None):
             err_gpm_metal += molwts[speciesname]**2 * errD[key]**2
         else:
             pass
-    return [gpm_gas, err_gpm_gas**0.5], [gpm_melt, err_gpm_melt**0.5], [gpm_metal, err_gpm_metal**0.5]
+
+    gpm_of_phases = [gpm_gas, gpm_melt, gpm_metal]
+    err_gpm_phases = [err_gpm_gas**0.5, err_gpm_melt**0.5, err_gpm_metal**0.5]
+
+    if all(err==0 for err in err_gpm_phases):
+        return gpm_of_phases
+    else:
+        return gpm_of_phases, err_gpm_phases
 
 def calculate_wtpc_uncertainties(D, errD=None):
     """Computes wt% (mass fractions) relative to the total mass of melt, atmosphere or metal phase for each 
@@ -395,21 +401,23 @@ def calculate_wtpc_uncertainties(D, errD=None):
        Returns:
        result (dict)        : Dictionary containing lists with mass fractions of all phase components, indexed as 
                             wt_{species}_{phase}, eg. wt_MgO_melt or wt_H2O_gas. First entry is value, second is uncertainty."""
-    gpm_gas, gpm_melt, gpm_metal = gpm_phases_uncertainties(D, errD)
+    gpm_of_phases, err_gpm_phases = gpm_phases_uncertainties(D, errD)
+    gpm_gas, gpm_melt, gpm_metal = gpm_of_phases
+    err_gpm_gas, err_gpm_melt, err_gpm_metal = err_gpm_phases
     
     if errD == None:
         keys = list(D.keys())
         nulls = np.zeros(len(keys))
         errD = dict(zip(keys, nulls))
         
-    M_gas = gpm_gas[0]*D["moles_atm"]
-    err_M_gas = M_gas*np.sqrt((gpm_gas[1]/gpm_gas[0])**2 + (errD["moles_atm"]/D["moles_atm"])**2)
+    M_gas = gpm_gas*D["moles_atm"]
+    err_M_gas = M_gas*np.sqrt((err_gpm_gas/gpm_gas)**2 + (errD["moles_atm"]/D["moles_atm"])**2)
     
-    M_melt = gpm_melt[0]*D["moles_melt"]
-    err_M_melt = M_melt*np.sqrt((gpm_melt[1]/gpm_melt[0])**2 + (errD["moles_melt"]/D["moles_melt"])**2)
+    M_melt = gpm_melt*D["moles_melt"]
+    err_M_melt = M_melt*np.sqrt((err_gpm_melt/gpm_melt)**2 + (errD["moles_melt"]/D["moles_melt"])**2)
     
-    M_metal = gpm_metal[0]*D["moles_metal"]
-    err_M_metal = M_metal*np.sqrt((gpm_metal[1]/gpm_metal[0])**2 + (errD["moles_metal"]/D["moles_metal"])**2)
+    M_metal = gpm_metal*D["moles_metal"]
+    err_M_metal = M_metal*np.sqrt((err_gpm_metal/gpm_metal)**2 + (errD["moles_metal"]/D["moles_metal"])**2)
     
     result = {}
     

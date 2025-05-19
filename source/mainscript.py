@@ -212,7 +212,7 @@ time_start_MCMC = time.time()
 
 n_walkers = 200
 thin = 10
-n_iters_MCMC = 300000
+n_iters_MCMC = 25000
 n_iter_eff = int(n_iters_MCMC / thin)
 
 walker_p0 = [(theta)+config["offset_MCMC"]*np.random.randn(len(theta)) for i in range(n_walkers)]
@@ -270,9 +270,19 @@ for i in range(len(GR)):
 print(f"Absolute difference between dual_annealing and end of MCMC best-fit parameters: \n{refinement}")
 
 ## Obtain spread around median (16, 50, 84 percentile)
-percentile_spread_params = list(map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]), zip(*np.percentile(samples_flat, [16, 50, 84], axis = 0)))) #Calculates uncertainties wrt 16th, 50th (medians) and 84th percentile
-for i in range(len(percentile_spread_params)):
-    print(f"{variable_keys[i]}: median = {percentile_spread_params[i][0]}, 16th percentile = {percentile_spread_params[i][1]}, 84th percentile = {percentile_spread_params[i][2]}")
+
+percentile_spread_params = []
+
+for var in range(len(variable_keys)):
+    samples_var = samples_flat[:,var]
+    samples_pc16 = np.percentile(samples_var, 16)
+    samples_pc50 = np.percentile(samples_var, 50)
+    samples_pc84 = np.percentile(samples_var, 84)
+
+    print(f"{variable_keys[var]}: pc16 = {samples_pc16}; pc50 = {samples_pc50}; pc84 = {samples_pc84}")
+    logging.info(f"{variable_keys[var]}: pc16 = {samples_pc16}; pc50 = {samples_pc50}; pc84 = {samples_pc84}")
+    percentile_spread_params.append([samples_pc16, samples_pc50, samples_pc84])
+
 
 ## Obtain n next-best samples after the MAP to gauge spread around maximum posterior estimate
 num_next_best = 500
@@ -342,23 +352,27 @@ err_logPO2_atm = np.abs((np.abs(logPO2_atm)*np.sqrt((errs["O2_gas"]/result["O2_g
                         / (ln(10)*(result["O2_gas"]*result["P_penalty"]))))
 err_DIW_atm = err_logPO2_atm
 
-## Mass Fraction
-gpm_atm, gpm_melt, gpm_metal = gpm_phases_uncertainties(result, errs)
+## Mass Fractions
+gpm_of_phases, err_gpm_phases = gpm_phases_uncertainties(result, errs)
+
+gpm_atm, gpm_melt, gpm_metal = gpm_of_phases
+err_gpm_atm, err_gpm_melt, err_gpm_metal = err_gpm_phases
+
 moles_total = result["moles_atm"] + result["moles_melt"] + result["moles_metal"]
 err_moles_total = (errs["moles_atm"]**2 + errs["moles_melt"]**2 + errs["moles_metal"]**2)**0.5
 
 
-mass_atm = (result["moles_atm"]/moles_total) * gpm_atm[0] #g
-mass_melt = (result["moles_melt"]/moles_total) * gpm_melt[0] #g
-mass_metal = (result["moles_metal"]/moles_total) * gpm_metal[0] #g
+mass_atm = (result["moles_atm"]/moles_total) * gpm_atm #g
+mass_melt = (result["moles_melt"]/moles_total) * gpm_melt #g
+mass_metal = (result["moles_metal"]/moles_total) * gpm_metal #g
 mass_total = mass_atm + mass_melt + mass_metal
 
 err_mass_atm = mass_atm*np.sqrt((errs["moles_atm"]/result["moles_atm"])**2 + (err_moles_total/moles_total)**2 + \
-                                (gpm_atm[1]/gpm_atm[0])**2)
+                                (err_gpm_atm/gpm_atm)**2)
 err_mass_melt = mass_melt*np.sqrt((errs["moles_melt"]/result["moles_melt"])**2 + (err_moles_total/moles_total)**2 + \
-                                (gpm_melt[1]/gpm_melt[0])**2)
+                                (err_gpm_melt/gpm_melt)**2)
 err_mass_metal = mass_metal*np.sqrt((errs["moles_metal"]/result["moles_metal"])**2 + (err_moles_total/moles_total)**2 + \
-                                (gpm_metal[1]/gpm_metal[0])**2)
+                                (err_gpm_metal/gpm_metal)**2)
 err_mass_total = (err_mass_atm**2 + err_mass_melt**2 + err_mass_metal**2)**0.5
 
 
@@ -371,8 +385,8 @@ err_mf_melt = massfrac_melt*np.sqrt((err_mass_melt / mass_melt)**2 + (err_mass_t
 err_mf_metal = massfrac_metal*np.sqrt((err_mass_metal / mass_metal)**2 + (err_mass_total / mass_total)**2)
 
 ## Planet Densities
-density_atm = gpm_atm[0] / (10.0*R_gas*T_used*result["P_penalty"])
-err_density_atm = np.abs(density_atm)*np.sqrt((gpm_atm[1]/gpm_atm[0])**2 + (errs["P_penalty"]/result["P_penalty"])**2)
+density_atm = gpm_atm / (10.0*R_gas*T_used*result["P_penalty"])
+err_density_atm = np.abs(density_atm)*np.sqrt((err_gpm_atm/gpm_atm)**2 + (errs["P_penalty"]/result["P_penalty"])**2)
 
 
 density_melt = sum([(result[key]*(molwts[key.replace('_melt','')]/(10.0*molvols[key.replace('_melt','')]))) for \
@@ -569,7 +583,7 @@ with open(outputname, 'a') as file:
     file.write("\n")
     for i in range(len(variable_keys)):
         key = variable_keys[i]
-        file.write(f"{percentile_spread_params[i]} # 50/16/84 percentile of {key} \n")
+        file.write(f"{percentile_spread_params[i]} # 16/50/84 percentile of {key} \n")
 
 with open(outputname, 'a') as file:
     file.write(f'\n{runtime_total} # Total runtime in s\n')
