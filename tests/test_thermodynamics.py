@@ -23,7 +23,8 @@ from source.thermodynamics import calculate_GRT
     ])
 
 def test_calculate_GRT(test, expected):
-    npt.assert_array_almost_equal(calculate_GRT(np.array(test)), np.array(expected), decimal=4)
+    npt.assert_array_almost_equal(calculate_GRT(np.array(test)), np.array(expected), decimal=8)
+
 
 
 

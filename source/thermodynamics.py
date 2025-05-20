@@ -4,13 +4,20 @@ try:
     from source.constants import (log_to_ln, R_gas)
 except:
     from constants import (log_to_ln, R_gas)
+
     # R_gas = 8.31446261815324     # J/K/mole
     # log_to_ln = 2.302585093      # change base of logarithms
+
 
 import numpy as np
 from numpy import log as ln
 from numpy import log10 as log
 from numpy import exp as exp
+
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 def shomate(T, coeff):
     """Computes the specific enthalpy and entropy of a species at temperatures T and 1 bar of pressure via
@@ -138,7 +145,8 @@ def get_Gibbs(T):
         elif T[i] >= 1000 and T[i] < 2500:
             G_H2_gas[i] = shomate(T[i], coeff_H2_m)
 
-        elif T[i] >= 2500 and T[i] <= 6000:
+        elif T[i] >= 2500 and T[i] <= 8000:
+
             G_H2_gas[i] = shomate(T[i], coeff_H2_h)
         i += 1
 
@@ -202,6 +210,10 @@ def get_Gibbs(T):
         "G_Na_gas" : G_Na_gas,
         "G_SiH4_gas" : G_SiH4_gas
     }
+
+
+    for key in G_dict:
+        logging.debug(f"Thermodynamics.py/get_Gibbs(): {key} at T = {T[0]}: {G_dict[key][0]}")
 
     return G_dict
 
@@ -293,4 +305,5 @@ def calculate_GRT(T):
     for i in range(len(G_list)):
         GRT_i = G_list[i] / (R_gas*T)
         GRT_list.append(GRT_i)
+
     return np.array(GRT_list)
