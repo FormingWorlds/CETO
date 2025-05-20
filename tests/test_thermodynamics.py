@@ -3,6 +3,7 @@ import numpy.testing as npt
 import pytest
 from source.thermodynamics import calculate_GRT
 
+
 ## Define some test cases via pytest parametrisation
 @pytest.mark.parametrize(
     "test, expected",
@@ -23,6 +24,7 @@ from source.thermodynamics import calculate_GRT
 
 def test_calculate_GRT(test, expected):
     npt.assert_array_almost_equal(calculate_GRT(np.array(test)), np.array(expected), decimal=8)
+
 
 
 

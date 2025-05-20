@@ -60,6 +60,7 @@ molvols = {
     "H"       : 0.266
 }
 
+
 ## Reaction labels, for plots or results
 reaction_names = [' ','Na2SiO3 = Na2O + SiO2','1/2SiO2 + Fe = FeO + 1/2Si','MgSiO3 = MgO + SiO2','O + 1/2Si = 1/2SiO2',\
     '2Hmetal=H2,sil','FeSiO3 = FeO + SiO2','2H2O,sil + Si=SiO2 + 2H2,sil','CO,g + 1/2O2 = CO2,g','CH4,g + 1/2O2 = 2H2,g + CO,g',\
@@ -67,3 +68,4 @@ reaction_names = [' ','Na2SiO3 = Na2O + SiO2','1/2SiO2 + Fe = FeO + 1/2Si','MgSi
     'H2,g = H2,sil','H2O,g = H2O,sil','CO,g = CO,sil','CO2,g = CO2,sil','SiO + 2H2 = SiH4 + 1/2O2',\
     'Si','Mg','O','Fe','H','Na','C','sum xi melt',\
     'sum xi metal','sum xi atm']
+

@@ -78,9 +78,11 @@
 
 ## Miscellaneous
 0         # Seed for random generators; if zero then seed will be chosen randomly (integer)
+
 30000      # Number of iterations at each temperature for dual annealing (integer)
 1.0e-06   # Offset in random positions of MCMC walkers (float)
 
 ## Global Parameters (Bool)
 True     # Reactive Metal. If True, metal core will be able to chemically interact with rest of the system.
 False      # Ideal mixing. If True, all mixing will be treated as ideal.
+

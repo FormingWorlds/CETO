@@ -2,6 +2,7 @@ from __future__ import annotations
 import numpy as np
 from numpy import log as ln
 
+
 def get_activity(D, config, get_all=False):
     """Computes activity coefficient for model species. For ideal mixing, all ln(g) terms equal
        zero such that there is no deviation from ideal behaviour. Non-ideal mixing is captured by the

@@ -84,3 +84,4 @@
 ## Global Parameters (Bool)
 False     # Unreactive Metal. If True, metal core will NOT be able to chemically interact with rest of the system.
 False      # Ideal mixing. If True, all mixing will be treated as ideal.
+

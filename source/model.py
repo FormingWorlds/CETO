@@ -1,8 +1,10 @@
 from __future__ import annotations
 import numpy as np
 from numpy import log as ln
+
 import math
 import logging
+
 
 try:
     from thermodynamics import calculate_GRT
@@ -12,6 +14,7 @@ except:
     from source.thermodynamics import calculate_GRT
     from source.utilities import *
     from source.activity import get_activity
+
 
 logger = logging.getLogger(__name__)
 
@@ -99,6 +102,7 @@ def objectivefunction_initial(var, varkeys, config, initial_moles, G, Pstd=1.0):
     F_initial = np.array([f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, 
              f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29])
     
+
     for i in range(len(F_initial)):
         logging.debug(f"model.py/objectivefunction_initial(): f{i+1} = {F_initial[i]}")
 

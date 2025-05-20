@@ -4,6 +4,7 @@ from numpy import log as ln
 from numpy import log10 as log
 
 from pathlib import Path
+
 import logging
 
 
@@ -11,6 +12,7 @@ try:
     from constants import *
 except:
     from source.constants import *
+
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +62,7 @@ def readconfig(path):
     config = dict(zip(datakeys, data))
     return config
 
+
 def moles_in_system(el, D):
     """Computes the number of moles of a certain element present within the system based on input data.
        Parameters:
@@ -72,9 +75,11 @@ def moles_in_system(el, D):
        Returns:
        nElement (float)         : Number of moles of requested element in system across melt, metal and gas phases.
        """
+
     el_inmelt = 0.0
     el_ingas = 0.0
     el_inmetal = 0.0
+
     for key in D:
         if el in key and '_melt' in key:
             if (el+'2') not in key and (el+'3') not in key and (el+'4') not in key:
@@ -82,6 +87,7 @@ def moles_in_system(el, D):
             else:
                 for coeff in range(2,5):
                     if (el+str(coeff)) in key:
+
                         el_inmelt += float(coeff)*D[key]
                     else:
                         pass
@@ -92,6 +98,7 @@ def moles_in_system(el, D):
             if (el+'2') not in key and (el+'3') not in key and (el+'4') not in key:
                 el_ingas += D[key]
             else:
+
                 for coeff in range(2,5):
                     if (el+str(coeff)) in key:
                         el_ingas += float(coeff)*D[key]
@@ -100,7 +107,6 @@ def moles_in_system(el, D):
     logging.debug(f"utilities.py/moles_in_system(): moles {el} in melt = {el_inmelt}")
     logging.debug(f"utilities.py/moles_in_system(): moles {el} in gas = {el_ingas}")
     logging.debug(f"utilities.py/moles_in_system(): moles {el} in metal = {el_inmetal}")
-
 
     return D["moles_melt"]*el_inmelt + D["moles_metal"]*el_inmetal + D["moles_atm"]*el_ingas
 
@@ -114,9 +120,11 @@ def gpm_phases(D):
        gpm_gas (float)      : total number of grams per mole of atmosphere
        gpm_melt (float)     : total number of grams per mole of silicate mantle
        gpm_metal (float)    : total number of grams per mole of metal core."""
+
     gpm_gas = 0.0
     gpm_melt = 0.0
     gpm_metal = 0.0
+
     for key in D:
         if "_gas" in key and 'moles' not in key and 'wt' not in key:
             speciesname = key.replace('_gas','')
@@ -131,6 +139,7 @@ def gpm_phases(D):
             pass
     return gpm_gas, gpm_melt, gpm_metal
 
+
 def calculate_pressure(D, config):
     """Calculates pressure according to equation 8 from Schlichting & Young (2022).
     Parameters:
@@ -138,6 +147,7 @@ def calculate_pressure(D, config):
                             each phase to calculate surface pressure in bar
     config (dict)           : Dictionary of global model input, unchanged from 
                             model initialisation, retrieves planet mass
+
     Returns:
     P (float)               : Surface pressure in bar"""
     
@@ -146,6 +156,7 @@ def calculate_pressure(D, config):
 
     molefrac_atm = D["moles_atm"] / moles_total
     molefrac_melt = D["moles_melt"] / moles_total
+
     molefrac_metal = 1.0 - molefrac_atm - molefrac_melt
 
     grams_atm = gpm_gas*molefrac_atm
@@ -153,22 +164,27 @@ def calculate_pressure(D, config):
     grams_metal = gpm_metal*molefrac_metal
 
 
+
     totalmass = grams_atm + grams_melt + grams_metal
 
     massfrac_atm = grams_atm / totalmass
 
     fratio = massfrac_atm/(1.0-massfrac_atm)
+
     P = 1.2e6*fratio*(config["M_p"])**(2.0/3.0) # surface pressure in bar
     return P
 
 
 def get_bounds(config):
+
     """Creates 2d array containing upper and lower bounds for each element in optimisation function based
        on model input. Conditions are imposed on species mole fractions (elements 0-25), moles of phases 
        (elements 26, 27, 28) and the pressure (element 29). Boundary conditions are adapted from original
        version of code by Edward Young.
        Parameters:
+
        config (dict)            : dictionary containing global model input, used to scale boundary condition for
+
                                 elements 27, 27 and 28.
        Returns:
        bounds (np.2darray)      : boundary conditions (low, high) for each of the 30 elements of the model's
@@ -183,12 +199,15 @@ def get_bounds(config):
             bounds[i, 1] = 0.4
         elif i == 21 or i == 22 or i == 23:
             bounds[i, 0] = 1.0e-15
+
             bounds[i, 1] = 1.0
+
         else:
             bounds[i, 0] = 1.0e-20
             bounds[i, 1] = 0.99999
 
     ## Boundaries on total # moles per phase
+
     bounds[27, 0] = config["moles_melt"]*0.5
     bounds[27, 1] = config["moles_melt"]*2.0
     bounds[28, 0] = config["moles_metal"]*0.5
@@ -199,6 +218,7 @@ def get_bounds(config):
     ## Boundaries on pressure
     bounds[29, 0] = 1.0e-3
     bounds[29, 1] = 900000.0
+
 
     return bounds
 
